@@ -398,6 +398,7 @@ function detectFormat(text) {
   if (/CANDIA\s+TRAVEL\s+BUREAU/i.test(text)) return 'D';
   if (/prepaid/i.test(text) && /passengers?/i.test(text)) return 'C';
   if (/Όνομα\s*:/.test(text) && /Άτομα\s*:/.test(text)) return 'B';
+  if (/Trend\s+Touristic/i.test(text) || /Transfer\s+Order\s+No[:\s]*\d+/i.test(text)) return 'E';
   return 'A';
 }
 
@@ -608,9 +609,52 @@ function extractFormatD(text) {
   };
 }
 
+// Format E: Trend Touristic Services SA. Also describes ONE leg only.
+function extractFormatE(text) {
+  const groupMatch = text.match(/Transfer\s+Order\s+No[:\s]*(\d+)/i);
+  const bookingRef = groupMatch ? groupMatch[1] : '';
+
+  const dateMatch = text.match(/Transfer\s+Date[:\s]*(\d{2}\/\d{2}\/\d{2,4})/i);
+  const date = dateMatch ? dateMatch[1] : '';
+
+  const timeMatch = text.match(/Start\s+Time[:\s]*(\d{2}:\d{2})/i);
+  const time = timeMatch ? timeMatch[1] : '';
+
+  const isInbound = (/Departure\s+Transfer/i.test(text) || /ΑΝΑΧΩΡΗΣΗ/.test(text)) ? false : true;
+
+  const paxMatch = text.match(/Total\s+Pax[:\s]*(\d+)/i);
+  const pax = paxMatch ? paxMatch[1] : '';
+
+  // Flight code, e.g. "A3 308 - 12:20 (3)" (airline code can include a digit, e.g. "A3")
+  const flightMatch = text.match(/([A-Z][A-Z0-9]?\s?\d{2,4})\s*-\s*\d{2}:\d{2}\s*\(\d+\)/);
+  const flightCode = flightMatch ? flightMatch[1].replace(/\s+/g, ' ').trim() : '';
+  const flight = flightCode ? `${flightCode}${time ? ' - ' + time : ''}` : '';
+
+  // Hotel + client surname from the table row, e.g.
+  // "12:20 Ibis Styles Hotel\nIbis Styles Heraklion Central Hotel   Ridolfo   3 0 0 A3 308 ..."
+  const placeMatch = text.match(/\d{2}:\d{2}\s+[A-Za-z][A-Za-z\s]*\n([A-Za-z][A-Za-z .]+?(?:Hotel|Resort|Suites|Villas|Studios|Apartments|Apts))\s+([A-Z][a-z]+)\s+\d/);
+  let hotel = '';
+  let clientName = '';
+  if (placeMatch) {
+    hotel = placeMatch[1].trim();
+    clientName = placeMatch[2].trim();
+  } else {
+    const shortPlace = text.match(/\d{2}:\d{2}\s+([A-Za-z][A-Za-z\s]+)/);
+    if (shortPlace) hotel = shortPlace[1].trim();
+  }
+
+  const legs = applyLegEstimate(isInbound, date, time, hotel, true);
+
+  return {
+    isInbound, bookingRef, platformNum: '', clientName, pax,
+    flight, hotel2: hotel,
+    ...legs
+  };
+}
+
 function fillForm(text) {
   const format = detectFormat(text);
-  const extractors = { A: extractFormatA, B: extractFormatB, C: extractFormatC, D: extractFormatD };
+  const extractors = { A: extractFormatA, B: extractFormatB, C: extractFormatC, D: extractFormatD, E: extractFormatE };
   const result = extractors[format](text);
 
   currentType = result.isInbound ? 'ΑΦΙΞΗ' : 'ΑΝΑΧΩΡΗΣΗ';
