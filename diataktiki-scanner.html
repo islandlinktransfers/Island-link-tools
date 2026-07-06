@@ -625,10 +625,17 @@ function extractFormatE(text) {
   const paxMatch = text.match(/Total\s+Pax[:\s]*(\d+)/i);
   const pax = paxMatch ? paxMatch[1] : '';
 
-  // Flight code, e.g. "A3 308 - 12:20 (3)" (airline code can include a digit, e.g. "A3")
-  const flightMatch = text.match(/([A-Z][A-Z0-9]?\s?\d{2,4})\s*-\s*\d{2}:\d{2}\s*\(\d+\)/);
-  const flightCode = flightMatch ? flightMatch[1].replace(/\s+/g, ' ').trim() : '';
-  const flight = flightCode ? `${flightCode}${time ? ' - ' + time : ''}` : '';
+  // Flight code - try a few patterns since OCR line-breaks vary:
+  // 1) top summary line "A3 308 - 12:20 (3)"
+  // 2) table row "... 3 0 0 A3 308 Gate 1 Travel ..." (after the Adl/Chd/Inf digits)
+  let flightCode = '';
+  const flightMatch1 = text.match(/\b([A-Z]{1,2}\d?\s*\d{2,4})\s*-\s*\d{2}:\d{2}/);
+  const flightMatch2 = text.match(/\d\s+\d\s+\d\s+([A-Z]{1,2}\d?\s?\d{2,4})\s+[A-Za-z]/);
+  if (flightMatch1) flightCode = flightMatch1[1];
+  else if (flightMatch2) flightCode = flightMatch2[1];
+  flightCode = flightCode.replace(/\s+/g, ' ').trim();
+  // Always show the time even if no flight code was found
+  const flight = [flightCode, time].filter(Boolean).join(' - ');
 
   // Hotel + client surname from the table row, e.g.
   // "12:20 Ibis Styles Hotel\nIbis Styles Heraklion Central Hotel   Ridolfo   3 0 0 A3 308 ..."
