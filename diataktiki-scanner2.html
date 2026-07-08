@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Διατακτική Scanner - Island Link</title>
+<link rel="manifest" href="manifest-diataktiki.json"/>
+<meta name="theme-color" content="#1a1a1a"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
+<link rel="icon" href="icon-192.png"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Διατακτική"/>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #f0ead8; min-height: 100vh; padding: 24px; }
+.container { max-width: 800px; margin: 0 auto; }
+h1 { font-size: 1.4rem; color: #c9b97a; margin-bottom: 8px; text-align: center; }
+.subtitle { text-align: center; color: #b0a98a; font-size: 0.85rem; margin-bottom: 24px; }
+
+.upload-area { background: #2a2a2a; border: 2px dashed #c9b97a44; border-radius: 12px; padding: 36px 24px; text-align: center; cursor: pointer; margin-bottom: 16px; }
+.upload-area:hover { border-color: #c9b97a; }
+.upload-area p { color: #b0a98a; font-size: 0.9rem; margin-top: 10px; }
+.upload-area strong { color: #c9b97a; }
+#fileInput { display: none; }
+
+#preview { display: none; margin-bottom: 16px; text-align: center; }
+#preview img { max-width: 100%; max-height: 250px; border-radius: 8px; border: 1px solid #c9b97a33; }
+
+.btn { display: block; width: 100%; background: #c9b97a; color: #1a1a1a; font-size: 0.95rem; font-weight: 700; padding: 13px; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 12px; }
+.btn:hover { background: #e8d99a; }
+.btn:disabled { background: #555; cursor: not-allowed; color: #888; }
+.btn-green { background: #25D366; color: white; }
+.btn-green:hover { background: #1ebe5d; }
+.btn-blue { background: #2563eb; color: white; }
+.btn-blue:hover { background: #1d4ed8; }
+
+#status { text-align: center; padding: 10px; border-radius: 8px; margin-bottom: 12px; display: none; font-size: 0.88rem; }
+.status-loading { background: #2a2a2a; color: #c9b97a; }
+.status-success { background: #1a3a1a; color: #25D366; }
+.status-error { background: #3a1a1a; color: #ff6b6b; }
+
+.result-card { background: #2a2a2a; border: 1px solid #c9b97a33; border-radius: 12px; padding: 20px; margin-bottom: 16px; display: none; }
+.result-card h3 { color: #c9b97a; margin-bottom: 16px; font-size: 0.95rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+.type-badge { display: inline-block; padding: 5px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; margin-bottom: 14px; }
+.type-inbound { background: #1a3a1a; color: #25D366; border: 1px solid #25D36644; }
+.type-outbound { background: #1a1a3a; color: #6b9bff; border: 1px solid #6b9bff44; }
+
+.field-group { margin-bottom: 14px; }
+.field-group label { display: block; font-size: 0.7rem; color: #c9b97a; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.field-row { display: flex; gap: 8px; align-items: center; }
+.field-row input { flex: 1; background: #1a1a1a; border: 1px solid #c9b97a22; border-radius: 6px; padding: 10px 12px; color: #f0ead8; font-size: 0.9rem; font-family: inherit; outline: none; }
+.field-row input:focus { border-color: #c9b97a; }
+.copy-btn { background: #c9b97a22; border: 1px solid #c9b97a44; color: #c9b97a; border-radius: 6px; padding: 8px 12px; cursor: pointer; font-size: 0.8rem; white-space: nowrap; transition: background 0.2s; }
+.copy-btn:hover { background: #c9b97a44; }
+.copy-btn.copied { background: #1a3a1a; color: #25D366; border-color: #25D366; }
+
+.section-title { font-size: 0.8rem; font-weight: 700; color: #c9b97a; text-transform: uppercase; letter-spacing: 0.1em; margin: 18px 0 10px; padding-bottom: 6px; border-bottom: 1px solid #c9b97a22; }
+
+.pax-display { background: #1a1a1a; border: 1px solid #c9b97a22; border-radius: 6px; padding: 10px 12px; font-size: 0.9rem; color: #f0ead8; flex: 1; }
+
+.action-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>📋 Island Link - Διατακτική</h1>
+  <p class="subtitle">Σκανάρισε voucher → συμπλήρωσε διατακτική + copy για ΕΙΧΕ</p>
+
+  <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#c9b97a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+      <polyline points="17 8 12 3 7 8"/>
+      <line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+    <p><strong>Κλικ για να ανεβάσεις voucher</strong></p>
+    <p>JPG, PNG, JPEG</p>
+  </div>
+  <input type="file" id="fileInput" accept="image/*" onchange="handleFile(event)"/>
+
+  <div id="preview"><img id="previewImg" src="" alt="Preview"/></div>
+  <div id="status"></div>
+  <button class="btn" id="scanBtn" onclick="scanVoucher()" disabled>🔍 Σκανάρισμα Voucher</button>
+
+  <div class="result-card" id="resultCard">
+    <h3>📋 Στοιχεία Διατακτικής</h3>
+    <div id="typeBadge"></div>
+
+    <div class="section-title">ΠΛΗΡΟΦΟΡΙΕΣ ΠΕΛΑΤΗ</div>
+
+    <div class="field-group">
+      <label>BOOKING REFERENCE / ΑΡ.ΚΡΑΤΗΣΗΣ</label>
+      <div class="field-row">
+        <input type="text" id="fBookingRef" placeholder="Group ID από voucher"/>
+        <button class="copy-btn" onclick="copyField('fBookingRef', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>ΑΡΙΘΜΟΣ ΗΛΕΚΤΡΟΝΙΚΗΣ ΠΛΑΤΦΟΡΜΑΣ</label>
+      <div class="field-row">
+        <input type="text" id="fPlatformNum" placeholder="Από σύστημα ΕΙΧΕ"/>
+        <button class="copy-btn" onclick="copyField('fPlatformNum', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>CLIENT NAME / ΟΝΟΜΑ ΠΕΛΑΤΗ</label>
+      <div class="field-row">
+        <input type="text" id="fClientName" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fClientName', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>PAX NUMBER / ΑΡΙΘΜΟΣ ΕΠΙΒΑΤΩΝ</label>
+      <div class="field-row">
+        <input type="text" id="fPax" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fPax', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="section-title">SERVICE 1 / ΥΠΗΡΕΣΙΑ 1</div>
+
+    <div class="field-group">
+      <label>DATE OF SERVICE / ΗΜΕΡΟΜΗΝΙΑ ΥΠΗΡΕΣΙΑΣ</label>
+      <div class="field-row">
+        <input type="text" id="fService1Date" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fService1Date', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>ARRIVAL FLIGHT NUMBER / ΑΡΙΘΜΟΣ ΠΤΗΣΗΣ</label>
+      <div class="field-row">
+        <input type="text" id="fFlight" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fFlight', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>PICK UP POINT / ΣΗΜΕΙΟ ΠΑΡΑΛΑΒΗΣ</label>
+      <div class="field-row">
+        <input type="text" id="fPickup1" value="HER AIRPORT" readonly/>
+        <button class="copy-btn" onclick="copyField('fPickup1', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>DROP OFF POINT / ΣΗΜΕΙΟ ΑΠΟΒΙΒΑΣΗΣ</label>
+      <div class="field-row">
+        <input type="text" id="fDropoff1" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fDropoff1', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="section-title">SERVICE 2 / ΥΠΗΡΕΣΙΑ 2</div>
+
+    <div class="field-group">
+      <label>HOTEL ACCOMMODATION / ΞΕΝΟΔΟΧΕΙΑΚΗ ΔΙΑΜΟΝΗ</label>
+      <div class="field-row">
+        <input type="text" id="fHotel2" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fHotel2', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>ESTIMATED HOURS / ΠΡΟΒΛΕΠΟΜΕΝΕΣ ΩΡΕΣ</label>
+      <div class="field-row">
+        <input type="text" id="fEstimatedHours" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fEstimatedHours', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="section-title">SERVICE 3 / ΥΠΗΡΕΣΙΑ 3</div>
+
+    <div class="field-group">
+      <label>PICK UP DATE & TIME / ΗΜΕΡΑ & ΩΡΑ ΠΑΡΑΛΑΒΗΣ</label>
+      <div class="field-row">
+        <input type="text" id="fService3DateTime" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fService3DateTime', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>PICK UP POINT / ΣΗΜΕΙΟ ΠΑΡΑΛΑΒΗΣ</label>
+      <div class="field-row">
+        <input type="text" id="fPickup3" placeholder="—"/>
+        <button class="copy-btn" onclick="copyField('fPickup3', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>DROP OFF POINT / ΣΗΜΕΙΟ ΑΠΟΒΙΒΑΣΗΣ</label>
+      <div class="field-row">
+        <input type="text" id="fDropoff3" value="HER AIRPORT" readonly/>
+        <button class="copy-btn" onclick="copyField('fDropoff3', this)">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="action-buttons">
+      <button class="btn btn-blue" onclick="exportExcel()">📥 Κατέβασε Excel</button>
+      <button class="btn btn-green" onclick="resetForm()">🔄 Νέο Voucher</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script>
+const VISION_KEY = 'AIzaSyCFoccrFL9LZ8HjYNtXJWRtQeWkXJZeovc';
+let currentFile = null;
+let currentType = '';
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  currentFile = file;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    document.getElementById('previewImg').src = ev.target.result;
+    document.getElementById('preview').style.display = 'block';
+    document.getElementById('scanBtn').disabled = false;
+    document.getElementById('resultCard').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function scanVoucher() {
+  if (!currentFile) return;
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Σκανάρισμα...';
+  showStatus('Ανάλυση voucher...', 'loading');
+
+  try {
+    const base64 = await fileToBase64(currentFile);
+    const base64Data = base64.split(',')[1];
+
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${VISION_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requests: [{
+            image: { content: base64Data },
+            features: [{ type: 'TEXT_DETECTION', maxResults: 1 }]
+          }]
+        })
+      }
+    );
+
+    const data = await response.json();
+    if (data.error) throw new Error(data.error.message);
+    const text = data.responses[0]?.fullTextAnnotation?.text || '';
+    if (!text) throw new Error('Δεν βρέθηκε κείμενο');
+
+    fillForm(text);
+    showStatus('✅ Voucher αναλύθηκε!', 'success');
+
+  } catch (err) {
+    showStatus('❌ Σφάλμα: ' + err.message, 'error');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🔍 Σκανάρισμα Voucher';
+}
+
+function addDays(dateStr, days) {
+  // Parse DD/MM/YYYY or DD.MM.YY
+  let d;
+  if (dateStr.includes('/')) {
+    const parts = dateStr.split('/');
+    const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+    d = new Date(`${year}-${parts[1]}-${parts[0]}`);
+  } else if (dateStr.includes('.')) {
+    const parts = dateStr.split('.');
+    const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+    d = new Date(`${year}-${parts[1]}-${parts[0]}`);
+  } else {
+    return dateStr;
+  }
+  d.setDate(d.getDate() + days);
+  return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`;
+}
+
+// Subtract N hours from a date+time, rolling the date back a day if needed
+function subtractHoursFromDateTime(dateStr, timeStr, hours) {
+  if (!dateStr || !timeStr) return { date: dateStr, time: timeStr };
+  const [hh, mm] = timeStr.split(':').map(Number);
+  let totalMinutes = hh * 60 + mm - hours * 60;
+  let dayOffset = 0;
+  while (totalMinutes < 0) { totalMinutes += 24 * 60; dayOffset -= 1; }
+  while (totalMinutes >= 24 * 60) { totalMinutes -= 24 * 60; dayOffset += 1; }
+  const newHH = Math.floor(totalMinutes / 60);
+  const newMM = totalMinutes % 60;
+  const newTime = `${String(newHH).padStart(2,'0')}:${String(newMM).padStart(2,'0')}`;
+  const newDate = dayOffset !== 0 ? addDays(dateStr, dayOffset) : dateStr;
+  return { date: newDate, time: newTime };
+}
+
+// Shared +/-5 day package estimate, used by formats B, C, D (single-leg vouchers)
+// hasFlightInfo: true when `time` is an actual flight time (so departures get -2h pickup),
+// false when `time` is already a manually-requested pickup time (left unchanged).
+function applyLegEstimate(isInbound, date, time, hotel, hasFlightInfo) {
+  if (!date) {
+    return {
+      service1Date: '',
+      dropoff1: isInbound ? hotel : '',
+      estimatedHours: '',
+      service3DateTime: isInbound ? '' : (time || ''),
+      pickup3: isInbound ? '' : hotel
+    };
+  }
+  if (isInbound) {
+    const departureDate = addDays(date, 5);
+    let service3DateTime = departureDate;
+    if (time && hasFlightInfo) {
+      const pickup = subtractHoursFromDateTime(departureDate, time, 2);
+      service3DateTime = `${pickup.date} ${pickup.time}`;
+    }
+    return {
+      service1Date: date,
+      dropoff1: hotel,
+      estimatedHours: `${date} - ${departureDate}`,
+      service3DateTime,
+      pickup3: hotel
+    };
+  } else {
+    const arrivalDate = addDays(date, -5);
+    let service3DateTime = date;
+    if (time) {
+      if (hasFlightInfo) {
+        const pickup = subtractHoursFromDateTime(date, time, 2);
+        service3DateTime = `${pickup.date} ${pickup.time}`;
+      } else {
+        service3DateTime = `${date} ${time}`;
+      }
+    }
+    return {
+      service1Date: arrivalDate,
+      dropoff1: hotel,
+      estimatedHours: `${arrivalDate} - ${date}`,
+      service3DateTime,
+      pickup3: hotel
+    };
+  }
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  if (dateStr.includes('.')) {
+    const parts = dateStr.split('.');
+    return `${parts[0]}/${parts[1]}/20${parts[2]}`;
+  }
+  return dateStr;
+}
+
+function extractGuestName(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const idx = lines.findIndex(l => /guest\s*name/i.test(l));
+  if (idx === -1) return '';
+
+  let candidate = '';
+
+  // Case 1: value is on the same line as the label, e.g. "Guest Name: Börner, Julia"
+  const sameLineMatch = lines[idx].match(/guest\s*name[:\s]+(.+)/i);
+  if (sameLineMatch && sameLineMatch[1].trim()) {
+    candidate = sameLineMatch[1].trim();
+  } else {
+    // Case 2: label sits alone on its own line, value follows on one of the next few lines
+    for (let i = idx + 1; i < Math.min(idx + 4, lines.length); i++) {
+      if (/[:]/.test(lines[i])) continue; // skip other labels like "DropOff Point:"
+      // Strip OCR-glued trailing codes from a neighboring column before validating
+      let cleaned = lines[i].replace(/\s+[A-Z]{1,3}\d{2,}\b.*$/, '').trim();
+      cleaned = cleaned.replace(/\s{2,}.*$/, '').trim();
+      // A name line: letters (incl. accented) possibly with a comma
+      if (/^[A-Za-zÀ-ÖØ-öø-ÿ]+[,\s][A-Za-zÀ-ÖØ-öø-ÿ .]+$/.test(cleaned)) {
+        candidate = cleaned;
+        break;
+      }
+    }
+  }
+  if (!candidate) return '';
+
+  // Strip OCR-glued trailing codes from the neighboring column, e.g. "Börner, Julia S0000"
+  candidate = candidate.replace(/\s+[A-Z]{1,3}\d{2,}\b.*$/, '').trim();
+  candidate = candidate.replace(/\s{2,}.*$/, '').trim();
+
+  // Reverse "Last, First" to "First Last"
+  if (candidate.includes(',')) {
+    const parts = candidate.split(',');
+    if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
+      candidate = `${parts[1].trim()} ${parts[0].trim()}`;
+    }
+  }
+  return candidate;
+}
+
+// Same logic as extractGuestName, but returns ALL guest names found (in order) for
+// vouchers that bundle multiple guests/hotels under one Grouping Id.
+function extractAllGuestNames(text) {
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const results = [];
+  for (let idx = 0; idx < lines.length; idx++) {
+    if (!/guest\s*name/i.test(lines[idx])) continue;
+    let candidate = '';
+    const sameLineMatch = lines[idx].match(/guest\s*name[:\s]+(.+)/i);
+    if (sameLineMatch && sameLineMatch[1].trim()) {
+      candidate = sameLineMatch[1].trim();
+    } else {
+      for (let i = idx + 1; i < Math.min(idx + 4, lines.length); i++) {
+        if (/[:]/.test(lines[i])) continue;
+        let cleaned = lines[i].replace(/\s+[A-Z]{1,3}\d{2,}\b.*$/, '').trim();
+        cleaned = cleaned.replace(/\s{2,}.*$/, '').trim();
+        if (/^[A-Za-zÀ-ÖØ-öø-ÿ]+[,\s][A-Za-zÀ-ÖØ-öø-ÿ .]+$/.test(cleaned)) {
+          candidate = cleaned;
+          break;
+        }
+      }
+    }
+    if (!candidate) continue;
+    candidate = candidate.replace(/\s+[A-Z]{1,3}\d{2,}\b.*$/, '').trim();
+    candidate = candidate.replace(/\s{2,}.*$/, '').trim();
+    if (candidate.includes(',')) {
+      const parts = candidate.split(',');
+      if (parts.length === 2 && parts[0].trim() && parts[1].trim()) {
+        candidate = `${parts[1].trim()} ${parts[0].trim()}`;
+      }
+    }
+    results.push(candidate);
+  }
+  return results;
+}
+
+function detectFormat(text) {
+  if (/CANDIA\s+TRAVEL\s+BUREAU/i.test(text)) return 'D';
+  if (/prepaid/i.test(text) && /passengers?/i.test(text)) return 'C';
+  if (/Όνομα\s*:/.test(text) && /Άτομα\s*:/.test(text)) return 'B';
+  if (/Trend\s+Touristic/i.test(text) || /Transfer\s+Order\s+No[:\s]*\d+/i.test(text)) return 'E';
+  return 'A';
+}
+
+function extractFormatA(text) {
+  const isInbound = /[Ii]nbound/.test(text) || /ΑΦΙΞΗ/.test(text) || /Arrival/.test(text);
+
+  const groupMatch = text.match(/[Gg]rouping\s+[Ii]d[:\s]+(\d+)/) ||
+                     text.match(/No\.\s*([\d.]+)/) ||
+                     text.match(/[A-Z](\d{6,})/);
+  const groupId = groupMatch ? groupMatch[1] || groupMatch[0] : '';
+
+  const dateMatch = text.match(/[Dd]ate[:\s]+(\d{2}[.\/-]\d{2}[.\/-]\d{2,4})/) ||
+                    text.match(/(\d{2}[.\/-]\d{2}[.\/-]\d{2,4})/);
+  const rawDate = dateMatch ? dateMatch[1] : '';
+  const voucherDate = formatDate(rawDate);
+
+  // A voucher can bundle multiple guests/hotels under one Grouping Id (shared shuttle).
+  // Convention: for arrivals we use the SECOND entry, for departures the FIRST entry.
+  // Everyone's pax is still summed together regardless of which entry is chosen.
+  const allGuestNames = extractAllGuestNames(text);
+  const allPax = [...text.matchAll(/A-C-I\s*\n?\s*(\d+)-(\d+)-(\d+)/g)];
+  const allFlightCodes = [...text.matchAll(/[A-Z]{3}-[A-Z]{3}\s+([A-Z][A-Z0-9]?\s*\d{3,5})/gi)];
+
+  const entryIdx = allGuestNames.length > 1 ? (isInbound ? 1 : 0) : 0;
+
+  const clientName = allGuestNames[entryIdx] || extractGuestName(text);
+
+  let pax = '';
+  if (allPax.length) {
+    const totals = allPax.reduce((acc, m) => [acc[0] + Number(m[1]), acc[1] + Number(m[2]), acc[2] + Number(m[3])], [0, 0, 0]);
+    pax = totals.join('-');
+  }
+
+  const flightCode = allFlightCodes[entryIdx] ? allFlightCodes[entryIdx][1].trim() :
+                      (allFlightCodes[0] ? allFlightCodes[0][1].trim() : '');
+  const flightTimeMatch = text.match(/[Ff]irst\/?[Ll]ast\s+[Ff]light\s+[Tt]ime[:\s]+(\d{2}:\d{2})/);
+  const targetTimeMatch = text.match(/[Tt]arget\s+[Tt]ime[:\s]+(\d{2}:\d{2})/);
+  // Prefer the real flight-time field; fall back to Target Time if that's the only one present
+  // (some departure sheets only carry a "Target Time" instead of "First/Last Flight Time").
+  const flightTime = flightTimeMatch ? flightTimeMatch[1] : (targetTimeMatch ? targetTimeMatch[1] : '');
+  const flightNum = flightCode ? `${flightCode} - ${flightTime}` : flightTime;
+
+  let hotel = '';
+  if (isInbound) {
+    const hotelMatches = [...text.matchAll(/[Dd]rop.?[Oo]ff\s+[Pp]oint[:\s]+([^\n]+)/g)];
+    hotel = hotelMatches[entryIdx] ? hotelMatches[entryIdx][1].trim() : (hotelMatches[0] ? hotelMatches[0][1].trim() : '');
+  } else {
+    const hotelNameMatches = [...text.matchAll(/[Hh]otel\s+[Nn]ame\s+([^\n]+)/g)];
+    if (hotelNameMatches.length) {
+      const m = hotelNameMatches[entryIdx] || hotelNameMatches[0];
+      hotel = m[1].replace(/\s+[A-Z]{2,3}-[A-Z]{2,3}.*/,'').trim();
+    }
+    if (!hotel) {
+      const pickupMatches = [...text.matchAll(/[Pp]ick.?[Uu]p\s+[Pp]oint[:\s]+([^\n]+)/g)];
+      if (pickupMatches.length) {
+        const m = pickupMatches[entryIdx] || pickupMatches[0];
+        hotel = m[1].replace(/\[.*?\]/g,'').trim();
+      }
+    }
+    if (!hotel) {
+      const startMatches = [...text.matchAll(/[Ss]tart\s+[Pp]oint[:\s]+([^\n]+)/g)];
+      if (startMatches.length) {
+        const m = startMatches[entryIdx] || startMatches[0];
+        hotel = m[1].trim();
+      }
+    }
+  }
+
+  let service1Date, service3DateTime, estimatedHours;
+  if (isInbound) {
+    const arrivalDate = voucherDate;
+    const departureDate = addDays(arrivalDate, 5);
+    service1Date = arrivalDate;
+    estimatedHours = `${arrivalDate} - ${departureDate}`;
+    // Pickup time for the (auto-computed) return leg = same flight time minus 2 hours,
+    // used as our best estimate since the actual future return flight time isn't known yet
+    if (flightTime) {
+      const pickup = subtractHoursFromDateTime(departureDate, flightTime, 2);
+      service3DateTime = `${pickup.date} ${pickup.time}`;
+    } else {
+      service3DateTime = departureDate;
+    }
+  } else {
+    const departureDate = voucherDate;
+    const arrivalDate = addDays(departureDate, -5);
+    service1Date = arrivalDate;
+    estimatedHours = `${arrivalDate} - ${departureDate}`;
+    // Pickup time = flight time (or Target Time fallback) minus 2 hours
+    if (flightTime) {
+      const pickup = subtractHoursFromDateTime(departureDate, flightTime, 2);
+      service3DateTime = `${pickup.date} ${pickup.time}`;
+    } else {
+      service3DateTime = departureDate;
+    }
+  }
+
+  return {
+    isInbound, bookingRef: groupId, platformNum: '', clientName, pax,
+    service1Date, flight: flightNum, dropoff1: hotel, hotel2: hotel,
+    estimatedHours, service3DateTime, pickup3: hotel
+  };
+}
+
+// Format B: Greek email-style single transfer request (e.g. resort -> taxi office)
+// Labels: Ημερομηνία / Ώρα / Όνομα / Άτομα / Δωμάτιο / Από / Προς / Αριθμός Πτήσης
+// This format describes ONE leg only, so the opposite leg is left blank for manual entry.
+function extractFormatB(text) {
+  const dateM = text.match(/Ημερομηνία\s*:?\s*(\d{2}\/\d{2}\/\d{4})/);
+  const timeM = text.match(/Ώρα\s*:?\s*(\d{2}:\d{2})/);
+  const nameM = text.match(/Όνομα\s*:?\s*([^\n]+)/);
+  const paxM = text.match(/Άτομα\s*:?\s*(\d+)/);
+  const fromM = text.match(/Από\s*:?\s*([^\n]+)/);
+  const toM = text.match(/Προς\s*:?\s*([^\n]+)/);
+  const flightM = text.match(/Αριθμός\s+Πτήσης\s*:?\s*([A-Za-z0-9]+)/);
+
+  const from = fromM ? fromM[1].trim() : '';
+  const to = toM ? toM[1].trim() : '';
+
+  let isInbound;
+  if (/ΑΦΙΞΗ/.test(text)) isInbound = true;
+  else if (/ΑΝΑΧΩΡΗΣΗ/.test(text)) isInbound = false;
+  else isInbound = /airport/i.test(from);
+
+  const hotel = /airport/i.test(from) ? to : from;
+  const date = dateM ? dateM[1] : '';
+  const time = timeM ? timeM[1] : '';
+  const flight = flightM ? `${flightM[1]}${time ? ' - ' + time : ''}` : '';
+
+  const legs = applyLegEstimate(isInbound, date, time, hotel, !!flightM);
+
+  return {
+    isInbound, bookingRef: '', platformNum: '',
+    clientName: nameM ? nameM[1].trim() : '',
+    pax: paxM ? paxM[1] : '',
+    flight, hotel2: hotel,
+    ...legs
+  };
+}
+
+// Format C: agency sheet (e.g. "Dimitris Katikas") with booking code, route, "Prepaid", client name & phone.
+// Also describes ONE leg only.
+function extractFormatC(text) {
+  const refM = text.match(/\b([A-Z]\d{5,6})\b/);
+  const dtM = text.match(/(\d{1,2})\/(\d{1,2})\s+(\d{2}:\d{2})/);
+  const routeM = text.match(/([A-Za-z]+)\s+Airport\s+([A-Z]{1,3}\d{3,5})\s*-\s*([A-Za-z .]+)/i);
+  const paxM = text.match(/(\d+-\d+)\s*passengers?/i);
+
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+  const prepaidIdx = lines.findIndex(l => /prepaid/i.test(l));
+  let clientName = '';
+  if (prepaidIdx !== -1) {
+    for (let i = prepaidIdx + 1; i < Math.min(prepaidIdx + 3, lines.length); i++) {
+      if (/^[A-Za-zÀ-ÖØ-öø-ÿ]+(\s[A-Za-zÀ-ÖØ-öø-ÿ]+)+$/.test(lines[i]) && !/^\+?\d/.test(lines[i])) {
+        clientName = lines[i];
+        break;
+      }
+    }
+  }
+
+  let date = '';
+  const now = new Date();
+  if (dtM) {
+    date = `${dtM[1].padStart(2, '0')}/${dtM[2].padStart(2, '0')}/${now.getFullYear()}`;
+  }
+  const time = dtM ? dtM[3] : '';
+
+  const flightCode = routeM ? routeM[2] : '';
+  const hotel = routeM ? routeM[3].trim() : '';
+
+  const isInbound = /ΑΝΑΧΩΡΗΣΗ/.test(text) ? false : true;
+  const legs = applyLegEstimate(isInbound, date, time, hotel, true);
+
+  return {
+    isInbound, bookingRef: refM ? refM[1] : '', platformNum: '', clientName,
+    pax: paxM ? paxM[1] : '',
+    flight: flightCode ? `${flightCode}${time ? ' - ' + time : ''}` : '',
+    hotel2: hotel,
+    ...legs
+  };
+}
+
+// Format D: CANDIA TRAVEL BUREAU tabular voucher. Also describes ONE leg only.
+// Note: client name in the table can come out compressed by OCR when there are
+// multiple passengers on one line - double check this field manually.
+function extractFormatD(text) {
+  // Strip known table header labels that often get OCR-glued directly onto data
+  // (e.g. "Pax ClientELENI BEACH APT htl STALIS")
+  const cleaned = text
+    .replace(/Time\s*\/\s*Place/gi, ' ')
+    .replace(/Pax\s+Client/gi, ' ')
+    .replace(/AD\s+CH\s+CF\s+Inf\s+Flight/gi, ' ')
+    .replace(/\bAgent\b/gi, ' ');
+
+  const refM = cleaned.match(/No\.\s*([\d.\-]+)/i);
+  const dateTypeM = cleaned.match(/(\d{2}\/\d{2}\/\d{2,4})\s+(Arrival|Departure)\s+Transfer/i);
+  const routeM = cleaned.match(/([A-Z][A-Z]+(?:\s[A-Z]+)*)\s+AIRPORT\s*-\s*([A-Z][A-Z]+(?:\s[A-Z]+)*)/i);
+  const timeM = cleaned.match(/(\d{2}:\d{2})\s+[A-Z][A-Z .]*?AIRPORT/i);
+  const paxM = cleaned.match(/Pax\s*:?\s*(\d+)/i);
+  const flightM = cleaned.match(/\b([A-Z]{2}\d{3,5})\b/);
+  // Hotel / drop-off address; optionally swallow a continuation address line (e.g. "...MAIN ROAD")
+  const placeM = cleaned.match(/([A-Z][A-Za-z]*(?:\s[A-Za-z.]+)*\s(?:APT|HTL|HOTEL)\s[A-Za-z .]+(?:\n[A-Z][A-Za-z .]*(?:ROAD|STREET|AVE|BLVD|STR)\.?[A-Za-z .]*)?)/i);
+
+  // Client name: the ALL-CAPS run sitting between the hotel address and the flight code
+  // (avoids the header-glue problem and doesn't depend on exact digit spacing)
+  let clientName = '';
+  if (placeM && flightM) {
+    const placeEnd = cleaned.indexOf(placeM[0]) + placeM[0].length;
+    const flightIdx = cleaned.indexOf(flightM[0], placeEnd);
+    if (flightIdx > placeEnd) {
+      const segment = cleaned.slice(placeEnd, flightIdx);
+      const nameMatch = segment.match(/\b[A-Z]{2,}(?:\s[A-Z]{2,}){0,2}\b/);
+      if (nameMatch) clientName = nameMatch[0].trim();
+    }
+  }
+
+  const isInbound = dateTypeM ? /arrival/i.test(dateTypeM[2]) : /ΑΦΙΞΗ/.test(text);
+
+  let date = '';
+  if (dateTypeM) {
+    const parts = dateTypeM[1].split('/');
+    const year = parts[2].length === 2 ? '20' + parts[2] : parts[2];
+    date = `${parts[0]}/${parts[1]}/${year}`;
+  }
+
+  const routeFrom = routeM ? `${routeM[1].trim()} AIRPORT` : '';
+  const routeTo = routeM ? routeM[2].trim() : '';
+  const hotel = placeM ? placeM[1].trim().replace(/\s+/g, ' ') : (isInbound ? routeTo : routeFrom);
+  const time = timeM ? timeM[1] : '';
+
+  const legs = applyLegEstimate(isInbound, date, time, hotel, true);
+
+  return {
+    isInbound, bookingRef: refM ? refM[1].trim() : '', platformNum: '',
+    clientName, pax: paxM ? paxM[1] : '',
+    flight: flightM ? flightM[1] : '',
+    hotel2: hotel,
+    ...legs
+  };
+}
+
+// Format E: Trend Touristic Services SA. Also describes ONE leg only.
+function extractFormatE(text) {
+  const groupMatch = text.match(/Transfer\s+Order\s+No[:\s]*(\d+)/i);
+  const bookingRef = groupMatch ? groupMatch[1] : '';
+
+  const dateMatch = text.match(/Transfer\s+Date[:\s]*(\d{2}\/\d{2}\/\d{2,4})/i);
+  const date = dateMatch ? dateMatch[1] : '';
+
+  const timeMatch = text.match(/Start\s+Time[:\s]*(\d{2}:\d{2})/i);
+  const time = timeMatch ? timeMatch[1] : '';
+
+  const isInbound = (/Departure\s+Transfer/i.test(text) || /ΑΝΑΧΩΡΗΣΗ/.test(text)) ? false : true;
+
+  const paxMatch = text.match(/Total\s+Pax[:\s]*(\d+)/i);
+  const pax = paxMatch ? paxMatch[1] : '';
+
+  // Flight code - try a few patterns since OCR line-breaks vary:
+  // 1) top summary line "A3 308 - 12:20 (3)"
+  // 2) table row "... 3 0 0 A3 308 Gate 1 Travel ..." (after the Adl/Chd/Inf digits)
+  let flightCode = '';
+  const flightMatch1 = text.match(/\b([A-Z]{1,2}\d?\s*\d{2,4})\s*-\s*\d{2}:\d{2}/);
+  const flightMatch2 = text.match(/\d\s+\d\s+\d\s+([A-Z]{1,2}\d?\s?\d{2,4})\s+[A-Za-z]/);
+  if (flightMatch1) flightCode = flightMatch1[1];
+  else if (flightMatch2) flightCode = flightMatch2[1];
+  flightCode = flightCode.replace(/\s+/g, ' ').trim();
+  // Always show the time even if no flight code was found
+  const flight = [flightCode, time].filter(Boolean).join(' - ');
+
+  // Hotel + client surname from the table row, e.g.
+  // "12:20 Ibis Styles Hotel\nIbis Styles Heraklion Central Hotel   Ridolfo   3 0 0 A3 308 ..."
+  const placeMatch = text.match(/\d{2}:\d{2}\s+[A-Za-z][A-Za-z\s]*\n([A-Za-z][A-Za-z .]+?(?:Hotel|Resort|Suites|Villas|Studios|Apartments|Apts))\s+([A-Z][a-z]+)\s+\d/);
+  let hotel = '';
+  let clientName = '';
+  if (placeMatch) {
+    hotel = placeMatch[1].trim();
+    clientName = placeMatch[2].trim();
+  } else {
+    const shortPlace = text.match(/\d{2}:\d{2}\s+([A-Za-z][A-Za-z\s]+)/);
+    if (shortPlace) hotel = shortPlace[1].trim();
+  }
+
+  const legs = applyLegEstimate(isInbound, date, time, hotel, true);
+
+  return {
+    isInbound, bookingRef, platformNum: '', clientName, pax,
+    flight, hotel2: hotel,
+    ...legs
+  };
+}
+
+function fillForm(text) {
+  const format = detectFormat(text);
+  const extractors = { A: extractFormatA, B: extractFormatB, C: extractFormatC, D: extractFormatD, E: extractFormatE };
+  const result = extractors[format](text);
+
+  currentType = result.isInbound ? 'ΑΦΙΞΗ' : 'ΑΝΑΧΩΡΗΣΗ';
+
+  const badge = document.getElementById('typeBadge');
+  badge.innerHTML = currentType === 'ΑΦΙΞΗ'
+    ? '<span class="type-badge type-inbound">✈️ ΑΦΙΞΗ</span>'
+    : '<span class="type-badge type-outbound">✈️ ΑΝΑΧΩΡΗΣΗ</span>';
+
+  document.getElementById('fBookingRef').value = result.bookingRef || '';
+  document.getElementById('fPlatformNum').value = result.platformNum || '';
+  document.getElementById('fClientName').value = result.clientName || '';
+  document.getElementById('fPax').value = result.pax || '';
+  document.getElementById('fService1Date').value = result.service1Date || '';
+  document.getElementById('fFlight').value = result.flight || '';
+  document.getElementById('fDropoff1').value = result.dropoff1 || '';
+  document.getElementById('fHotel2').value = result.hotel2 || '';
+  document.getElementById('fEstimatedHours').value = result.estimatedHours || '';
+  document.getElementById('fService3DateTime').value = result.service3DateTime || '';
+  document.getElementById('fPickup3').value = result.pickup3 || '';
+
+  document.getElementById('resultCard').style.display = 'block';
+}
+
+function copyField(id, btn) {
+  const val = document.getElementById(id).value;
+  if (!val) return;
+  navigator.clipboard.writeText(val).then(() => {
+    btn.textContent = '✅ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.textContent = '📋 Copy';
+      btn.classList.remove('copied');
+    }, 1500);
+  });
+}
+
+async function exportExcel() {
+  const val = id => document.getElementById(id).value;
+  const bookingRef = val('fBookingRef');
+
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('ΔΙΑΤΑΚΤΙΚΗ');
+
+  sheet.columns = [{ width: 42 }, { width: 32 }];
+
+  // Print setup: A4 by default, but fit-to-page so it also prints cleanly on A5
+  sheet.pageSetup = {
+    paperSize: 9, // 9 = A4 (11 = A5); fitToPage below makes it scale correctly on either
+    orientation: 'portrait',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 1,
+    horizontalCentered: true,
+    margins: { left: 0.35, right: 0.35, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }
+  };
+
+  const thinBorder = {
+    top: { style: 'thin', color: { argb: 'FF999999' } },
+    left: { style: 'thin', color: { argb: 'FF999999' } },
+    bottom: { style: 'thin', color: { argb: 'FF999999' } },
+    right: { style: 'thin', color: { argb: 'FF999999' } }
+  };
+
+  const rows = [
+    { type: 'title', text: 'PACKAGE SERVICE / ΔΙΑΤΑΚΤΙΚΗ ΠΑΚΕΤΟΥ ΥΠΗΡΕΣΙΩΝ' },
+    { type: 'spacer' },
+    { type: 'section', text: 'CLIENT INFORMATION / ΠΛΗΡΟΦΟΡΙΕΣ ΠΕΛΑΤΗ' },
+    { type: 'data', label: 'BOOKING REFERENCE / ΑΡ.ΚΡΑΤΗΣΗΣ', value: bookingRef },
+    { type: 'data', label: 'ΑΡΙΘΜΟΣ ΗΛΕΚΤΡΟΝΙΚΗΣ ΠΛΑΤΦΟΡΜΑΣ', value: val('fPlatformNum') },
+    { type: 'data', label: 'CLIENT NAME / ΟΝΟΜΑ ΠΕΛΑΤΗ', value: val('fClientName') },
+    { type: 'data', label: 'PAX NUMBER / ΑΡΙΘΜΟΣ ΕΠΙΒΑΤΩΝ', value: val('fPax') },
+    { type: 'spacer' },
+    { type: 'section', text: 'SERVICE 1 / ΥΠΗΡΕΣΙΑ 1' },
+    { type: 'data', label: 'DATE OF SERVICE / ΗΜΕΡΟΜΗΝΙΑ ΥΠΗΡΕΣΙΑΣ', value: val('fService1Date') },
+    { type: 'data', label: 'ARRIVAL FLIGHT NUMBER / ΑΡΙΘΜΟΣ ΠΤΗΣΗΣ', value: val('fFlight') },
+    { type: 'data', label: 'PICK UP POINT / ΣΗΜΕΙΟ ΠΑΡΑΛΑΒΗΣ', value: 'HER AIRPORT' },
+    { type: 'data', label: 'DROP OFF POINT / ΣΗΜΕΙΟ ΑΠΟΒΙΒΑΣΗΣ', value: val('fDropoff1') },
+    { type: 'spacer' },
+    { type: 'section', text: 'SERVICE 2 / ΥΠΗΡΕΣΙΑ 2' },
+    { type: 'data', label: 'HOTEL ACCOMMODATION / ΞΕΝΟΔΟΧΕΙΑΚΗ ΔΙΑΜΟΝΗ', value: val('fHotel2') },
+    { type: 'data', label: 'ESTIMATED HOURS / ΠΡΟΒΛΕΠΟΜΕΝΕΣ ΩΡΕΣ', value: val('fEstimatedHours') },
+    { type: 'spacer' },
+    { type: 'section', text: 'SERVICE 3 / ΥΠΗΡΕΣΙΑ 3' },
+    { type: 'data', label: 'PICK UP DATE & TIME / ΗΜΕΡΑ & ΩΡΑ ΠΑΡΑΛΑΒΗΣ', value: val('fService3DateTime') },
+    { type: 'data', label: 'PICK UP POINT / ΣΗΜΕΙΟ ΠΑΡΑΛΑΒΗΣ', value: val('fPickup3') },
+    { type: 'data', label: 'DROP OFF POINT / ΣΗΜΕΙΟ ΑΠΟΒΙΒΑΣΗΣ', value: 'HER AIRPORT' },
+    { type: 'spacer' },
+    { type: 'section', text: 'VEHICLE INFO / ΠΛΗΡΟΦΟΡΙΕΣ ΟΧΗΜΑΤΟΣ' },
+    { type: 'data', label: 'CAR BRAND / ΜΑΡΚΑ ΟΧΗΜΑΤΟΣ', value: 'MERCEDES C CLASS' },
+    { type: 'data', label: 'LICENSE PLATE / ΑΡ. ΚΥΚΛΟΦΟΡΙΑΣ', value: 'HZM 6777' },
+    { type: 'data', label: "DRIVER'S NAME & ID / ΟΝΟΜΑ & Α.Δ.Τ. ΟΔΗΓΟΥ", value: 'ΡΑΣΙΔΑΚΗΣ ΙΩΑΝΝΗΣ - Α0 2084193' },
+    { type: 'data', label: 'DRIVING LICENSE NR / ΑΡ.ΑΔΕΙΑΣ ΟΔΗΓΗΣΗΣ', value: '460080464' },
+    { type: 'spacer' },
+    { type: 'signature', label: 'STAMP & SIGN / ΣΦΡΑΓΙΔΑ & ΥΠΟΓΡΑΦΗ' }
+  ];
+
+  rows.forEach(row => {
+    let excelRow;
+    if (row.type === 'title') {
+      excelRow = sheet.addRow([row.text]);
+      sheet.mergeCells(`A${excelRow.number}:B${excelRow.number}`);
+      excelRow.height = 28;
+      const cell = excelRow.getCell(1);
+      cell.font = { bold: true, size: 13, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+      cell.border = thinBorder;
+    } else if (row.type === 'section') {
+      excelRow = sheet.addRow([row.text]);
+      sheet.mergeCells(`A${excelRow.number}:B${excelRow.number}`);
+      excelRow.height = 19;
+      const cell = excelRow.getCell(1);
+      cell.font = { bold: true, size: 10.5, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'left', vertical: 'middle', indent: 1 };
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF4B5563' } };
+      cell.border = thinBorder;
+    } else if (row.type === 'data') {
+      excelRow = sheet.addRow([row.label, row.value || '']);
+      excelRow.height = 17;
+      const labelCell = excelRow.getCell(1);
+      const valueCell = excelRow.getCell(2);
+      labelCell.font = { bold: true, size: 9.5 };
+      labelCell.alignment = { vertical: 'middle', wrapText: true, indent: 1 };
+      labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+      labelCell.border = thinBorder;
+      valueCell.font = { size: 9.5 };
+      valueCell.alignment = { vertical: 'middle', wrapText: true, indent: 1 };
+      valueCell.border = thinBorder;
+    } else if (row.type === 'signature') {
+      excelRow = sheet.addRow([row.label, '']);
+      excelRow.height = 42;
+      const labelCell = excelRow.getCell(1);
+      const valueCell = excelRow.getCell(2);
+      labelCell.font = { bold: true, size: 9.5 };
+      labelCell.alignment = { vertical: 'middle', wrapText: true, indent: 1 };
+      labelCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } };
+      labelCell.border = thinBorder;
+      valueCell.border = thinBorder;
+    } else {
+      // spacer: small blank row, no borders, for breathing room between sections
+      excelRow = sheet.addRow(['']);
+      excelRow.height = 6;
+    }
+  });
+
+  try {
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `diataktiki_${bookingRef || 'export'}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error(err);
+    alert('Σφάλμα κατά τη δημιουργία του Excel: ' + err.message);
+  }
+}
+
+function resetForm() {
+  document.getElementById('resultCard').style.display = 'none';
+  document.getElementById('preview').style.display = 'none';
+  document.getElementById('scanBtn').disabled = true;
+  document.getElementById('fileInput').value = '';
+  currentFile = null;
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+function showStatus(msg, type) {
+  const el = document.getElementById('status');
+  el.textContent = msg;
+  el.className = `status-${type}`;
+  el.style.display = 'block';
+  if (type !== 'loading') setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => console.error('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
