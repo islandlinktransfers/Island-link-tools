@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Οικογενειακό Budget</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #f0ead8; min-height: 100vh; padding: 20px; padding-bottom: 60px; }
+h1 { font-size: 1.4rem; color: #c9b97a; margin-bottom: 4px; }
+.subtitle { color: #b0a98a; font-size: 0.85rem; margin-bottom: 20px; }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.card { background: #2a2a2a; border-radius: 12px; padding: 16px; }
+.card.wide { grid-column: 1 / -1; }
+.card-label { font-size: 0.75rem; color: #b0a98a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.card-value { font-size: 1.5rem; font-weight: 700; }
+.card-value.income { color: #4ADE80; }
+.card-value.expense { color: #F87171; }
+.card-value.net { color: #c9b97a; }
+
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.btn { display: block; width: 100%; font-size: 1rem; font-weight: 700; padding: 14px; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; }
+.btn-income { background: #4ADE80; color: #123; }
+.btn-income:hover { background: #6ee7a0; }
+.btn-expense { background: #F87171; color: #200; }
+.btn-expense:hover { background: #fb9a9a; }
+.btn-save { background: #c9b97a; color: #1a1a1a; margin-top: 8px; }
+.btn-save:hover { background: #e8d99a; }
+.btn-cancel { background: #444; color: #ccc; margin-top: 8px; }
+.btn-cancel:hover { background: #555; }
+
+.form-card { background: #2a2a2a; border-radius: 12px; padding: 20px; margin-bottom: 20px; display: none; }
+.form-card.open { display: block; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 0.8rem; color: #b0a98a; margin-bottom: 6px; }
+.field input, .field select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; background: #1e1e1e; color: #f0ead8; font-size: 1rem; }
+.field input:focus, .field select:focus { outline: none; border-color: #c9b97a; }
+
+.section-title { font-size: 1rem; color: #c9b97a; margin: 24px 0 12px; font-weight: 700; }
+
+.cat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cat-name { flex: 0 0 130px; font-size: 0.85rem; color: #ddd; }
+.cat-bar-track { flex: 1; background: #333; border-radius: 6px; height: 10px; overflow: hidden; }
+.cat-bar-fill { background: #c9b97a; height: 100%; border-radius: 6px; }
+.cat-amount { flex: 0 0 60px; text-align: right; font-size: 0.8rem; color: #b0a98a; }
+
+.entry { display: flex; align-items: center; justify-content: space-between; background: #2a2a2a; border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.entry-left { display: flex; align-items: center; gap: 10px; }
+.entry-icon { font-size: 1.2rem; }
+.entry-desc { font-size: 0.9rem; }
+.entry-date { font-size: 0.75rem; color: #888; }
+.entry-amount { font-weight: 700; font-size: 0.95rem; }
+.entry-amount.income { color: #4ADE80; }
+.entry-amount.expense { color: #F87171; }
+.entry-delete { background: none; border: none; color: #888; font-size: 1.1rem; cursor: pointer; padding: 4px 8px; }
+.entry-delete:hover { color: #F87171; }
+
+.empty-msg { color: #777; font-size: 0.85rem; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+<h1>💰 Οικογενειακό Budget</h1>
+<p class="subtitle">Πάτα ένα κουμπί για να προσθέσεις έσοδο ή έξοδο — τίποτα άλλο</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-label">Έσοδα Μήνα</div>
+    <div class="card-value income" id="totalIncome">0,00 €</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Έξοδα Μήνα</div>
+    <div class="card-value expense" id="totalExpense">0,00 €</div>
+  </div>
+  <div class="card wide">
+    <div class="card-label">Καθαρό Υπόλοιπο Μήνα</div>
+    <div class="card-value net" id="netBalance">0,00 €</div>
+  </div>
+</div>
+
+<div class="action-row">
+  <button class="btn btn-income" onclick="toggleForm('income')">➕ Έσοδο</button>
+  <button class="btn btn-expense" onclick="toggleForm('expense')">➖ Έξοδο</button>
+</div>
+
+<div class="form-card" id="incomeForm">
+  <div class="field">
+    <label>Ποσό (€)</label>
+    <input type="number" id="incAmount" inputmode="decimal" placeholder="π.χ. 150"/>
+  </div>
+  <div class="field">
+    <label>Πηγή</label>
+    <input type="text" id="incSource" placeholder="π.χ. Μισθός"/>
+  </div>
+  <div class="field">
+    <label>Ημερομηνία</label>
+    <input type="date" id="incDate"/>
+  </div>
+  <button class="btn btn-save" onclick="saveIncome()">Αποθήκευση Εσόδου</button>
+  <button class="btn btn-cancel" onclick="toggleForm('income')">Άκυρο</button>
+</div>
+
+<div class="form-card" id="expenseForm">
+  <div class="field">
+    <label>Ποσό (€)</label>
+    <input type="number" id="expAmount" inputmode="decimal" placeholder="π.χ. 45"/>
+  </div>
+  <div class="field">
+    <label>Κατηγορία</label>
+    <select id="expCategory">
+      <option>Καύσιμα</option>
+      <option>Service Αυτοκινήτου</option>
+      <option>Σπίτι / Νοικοκυριό</option>
+      <option>Φαγητό</option>
+      <option>Λογαριασμοί</option>
+      <option>Διασκέδαση</option>
+      <option>Άλλα</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Περιγραφή (προαιρετικό)</label>
+    <input type="text" id="expDesc" placeholder="π.χ. Βενζίνη Shell"/>
+  </div>
+  <div class="field">
+    <label>Ημερομηνία</label>
+    <input type="date" id="expDate"/>
+  </div>
+  <button class="btn btn-save" onclick="saveExpense()">Αποθήκευση Εξόδου</button>
+  <button class="btn btn-cancel" onclick="toggleForm('expense')">Άκυρο</button>
+</div>
+
+<div class="section-title">📊 Έξοδα ανά Κατηγορία (μήνα)</div>
+<div id="categoryBreakdown"></div>
+
+<div class="section-title">🕒 Ιστορικό</div>
+<div id="entriesList"></div>
+
+<script>
+const STORAGE_KEY = 'islandLinkBudgetEntries';
+
+function loadEntries() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveEntries(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
+function toggleForm(type) {
+  const incForm = document.getElementById('incomeForm');
+  const expForm = document.getElementById('expenseForm');
+  if (type === 'income') {
+    expForm.classList.remove('open');
+    incForm.classList.toggle('open');
+    if (incForm.classList.contains('open')) document.getElementById('incDate').value = todayStr();
+  } else {
+    incForm.classList.remove('open');
+    expForm.classList.toggle('open');
+    if (expForm.classList.contains('open')) document.getElementById('expDate').value = todayStr();
+  }
+}
+
+function saveIncome() {
+  const amount = parseFloat(document.getElementById('incAmount').value);
+  const source = document.getElementById('incSource').value.trim();
+  const dateVal = document.getElementById('incDate').value || todayStr();
+  if (!amount || amount <= 0) { alert('Βάλε ένα έγκυρο ποσό'); return; }
+  if (!source) { alert('Βάλε την πηγή του εσόδου'); return; }
+
+  const entries = loadEntries();
+  entries.push({ id: Date.now(), type: 'income', amount, label: source, date: dateVal });
+  saveEntries(entries);
+
+  document.getElementById('incAmount').value = '';
+  document.getElementById('incSource').value = '';
+  toggleForm('income');
+  render();
+}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const category = document.getElementById('expCategory').value;
+  const desc = document.getElementById('expDesc').value.trim();
+  const dateVal = document.getElementById('expDate').value || todayStr();
+  if (!amount || amount <= 0) { alert('Βάλε ένα έγκυρο ποσό'); return; }
+
+  const entries = loadEntries();
+  entries.push({ id: Date.now(), type: 'expense', amount, category, label: desc || category, date: dateVal });
+  saveEntries(entries);
+
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expDesc').value = '';
+  toggleForm('expense');
+  render();
+}
+
+function deleteEntry(id) {
+  if (!confirm('Διαγραφή αυτής της καταχώρησης;')) return;
+  const entries = loadEntries().filter(e => e.id !== id);
+  saveEntries(entries);
+  render();
+}
+
+function isThisMonth(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+}
+
+function formatEUR(n) {
+  return n.toLocaleString('el-GR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €';
+}
+
+function render() {
+  const entries = loadEntries();
+  const monthEntries = entries.filter(e => isThisMonth(e.date));
+
+  const totalIncome = monthEntries.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0);
+  const totalExpense = monthEntries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
+
+  document.getElementById('totalIncome').textContent = formatEUR(totalIncome);
+  document.getElementById('totalExpense').textContent = formatEUR(totalExpense);
+  document.getElementById('netBalance').textContent = formatEUR(totalIncome - totalExpense);
+
+  const categories = ['Καύσιμα', 'Service Αυτοκινήτου', 'Σπίτι / Νοικοκυριό', 'Φαγητό', 'Λογαριασμοί', 'Διασκέδαση', 'Άλλα'];
+  const catTotals = categories.map(cat => ({
+    cat,
+    amount: monthEntries.filter(e => e.type === 'expense' && e.category === cat).reduce((s, e) => s + e.amount, 0)
+  }));
+  const maxCat = Math.max(1, ...catTotals.map(c => c.amount));
+
+  const breakdownEl = document.getElementById('categoryBreakdown');
+  if (totalExpense === 0) {
+    breakdownEl.innerHTML = '<div class="empty-msg">Δεν υπάρχουν έξοδα αυτόν τον μήνα ακόμα</div>';
+  } else {
+    breakdownEl.innerHTML = catTotals.filter(c => c.amount > 0).map(c => `
+      <div class="cat-row">
+        <div class="cat-name">${c.cat}</div>
+        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(c.amount / maxCat * 100).toFixed(0)}%"></div></div>
+        <div class="cat-amount">${formatEUR(c.amount)}</div>
+      </div>
+    `).join('');
+  }
+
+  const listEl = document.getElementById('entriesList');
+  const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+  if (sorted.length === 0) {
+    listEl.innerHTML = '<div class="empty-msg">Δεν υπάρχουν καταχωρήσεις ακόμα — πάτα ένα από τα κουμπιά πιο πάνω</div>';
+  } else {
+    listEl.innerHTML = sorted.map(e => `
+      <div class="entry">
+        <div class="entry-left">
+          <span class="entry-icon">${e.type === 'income' ? '💰' : '💸'}</span>
+          <div>
+            <div class="entry-desc">${e.label}</div>
+            <div class="entry-date">${new Date(e.date).toLocaleDateString('el-GR')}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="entry-amount ${e.type}">${e.type === 'income' ? '+' : '-'}${formatEUR(e.amount)}</div>
+          <button class="entry-delete" onclick="deleteEntry(${e.id})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+render();
+</script>
+</body>
+</html>
