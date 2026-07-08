@@ -68,11 +68,6 @@ tr:hover td { background: #ffffff08; }
   <h1>🚗 Island Link - Voucher Scanner</h1>
   <p class="subtitle">Ανέβασε φωτογραφία voucher → αυτόματη καταχώρηση στο Google Sheets</p>
 
-  <div class="field" style="margin-bottom:16px;">
-    <label>Όνομα Οδηγού</label>
-    <input type="text" id="driverName" placeholder="π.χ. Μανουσάκης Φάνης" oninput="saveDriverName()"/>
-  </div>
-
   <div class="upload-area" onclick="document.getElementById('fileInput').click()">
     <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c9b97a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -120,7 +115,7 @@ tr:hover td { background: #ffffff08; }
       <table>
         <thead>
           <tr>
-            <th>#</th><th>Οδηγός</th><th>Τύπος</th><th>Ώρα</th><th>Group ID</th><th>Περιοχή</th><th>Ξενοδοχείο</th><th>Με ΦΠΑ</th><th>Χωρίς ΦΠΑ</th>
+            <th>#</th><th>Τύπος</th><th>Ώρα</th><th>Group ID</th><th>Περιοχή</th><th>Ξενοδοχείο</th><th>Με ΦΠΑ</th><th>Χωρίς ΦΠΑ</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -164,15 +159,6 @@ const priceList = {
 
 let currentFile = null;
 let currentFiles = [];
-
-function saveDriverName() {
-  localStorage.setItem('islandLinkDriverName', document.getElementById('driverName').value);
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('islandLinkDriverName');
-  if (saved) document.getElementById('driverName').value = saved;
-});
 let currentType = '';
 let vouchers = [];
 
@@ -242,12 +228,6 @@ async function runOCR(file) {
 
 async function scanVoucher() {
   if (!currentFiles || !currentFiles.length) return;
-
-  const driverName = document.getElementById('driverName').value.trim();
-  if (!driverName) {
-    showStatus('⚠️ Γράψε πρώτα το όνομά σου (Όνομα Οδηγού) πριν σκανάρεις', 'error');
-    return;
-  }
 
   const btn = document.getElementById('scanBtn');
   btn.disabled = true;
@@ -595,10 +575,7 @@ function parseVoucher(text) {
 async function saveCurrentEntry() {
   const priceVat = document.getElementById('priceWithVat').textContent.replace('€', '').replace('❌ Δεν βρέθηκε', '');
   const priceNoVat = document.getElementById('priceWithoutVat').textContent.replace('€', '').replace('❌', '');
-  const driver = document.getElementById('driverName').value.trim() || 'Άγνωστος';
-
   const entry = {
-    driver,
     afixis: currentType === 'ΑΦΙΞΗ' ? '✅' : '',
     anaxorisis: currentType === 'ΑΝΑΧΩΡΗΣΗ' ? '✅' : '',
     ora: document.getElementById('fTime').value,
@@ -642,7 +619,6 @@ function renderTable() {
   tbody.innerHTML = vouchers.map((v, i) => `
     <tr>
       <td>${i+1}</td>
-      <td>${v.driver || ''}</td>
       <td><span class="${v.type === 'ΑΦΙΞΗ' ? 'badge-in' : 'badge-out'}">${v.type}</span></td>
       <td>${v.afixis || v.anaxorisis}</td>
       <td>${v.ora}</td>
@@ -656,8 +632,8 @@ function renderTable() {
 }
 
 function exportToCSV() {
-  const headers = ['Οδηγός','Τύπος','Ημερομηνία','Ώρα','Group ID','Περιοχή','Ξενοδοχείο','Τιμή με ΦΠΑ','Τιμή χωρίς ΦΠΑ'];
-  const rows = vouchers.map(v => [v.driver||'', v.type, v.afixis||v.anaxorisis, v.ora, v.groupId, v.perioxh, v.xenodoxeio, v.priceVat.replace('€',''), v.priceNoVat.replace('€','')]);
+  const headers = ['Τύπος','Ημερομηνία','Ώρα','Group ID','Περιοχή','Ξενοδοχείο','Τιμή με ΦΠΑ','Τιμή χωρίς ΦΠΑ'];
+  const rows = vouchers.map(v => [v.type, v.afixis||v.anaxorisis, v.ora, v.groupId, v.perioxh, v.xenodoxeio, v.priceVat.replace('€',''), v.priceNoVat.replace('€','')]);
   const csv = [headers,...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
