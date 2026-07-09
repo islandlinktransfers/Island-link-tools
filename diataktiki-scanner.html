@@ -349,7 +349,7 @@ function applyLegEstimate(isInbound, date, time, hotel, hasFlightInfo) {
       service3DateTime = `${pickup.date} ${pickup.time}`;
     }
     return {
-      service1Date: date,
+      service1Date: time ? `${date} - ${time}` : date,
       dropoff1: hotel,
       estimatedHours: `${date} - ${departureDate}`,
       service3DateTime,
@@ -548,7 +548,7 @@ function extractFormatA(text) {
   if (isInbound) {
     const arrivalDate = voucherDate;
     const departureDate = addDays(arrivalDate, 5);
-    service1Date = arrivalDate;
+    service1Date = flightTime ? `${arrivalDate} - ${flightTime}` : arrivalDate;
     estimatedHours = `${arrivalDate} - ${departureDate}`;
     // Pickup time for the (auto-computed) return leg = same flight time minus 2 hours,
     // used as our best estimate since the actual future return flight time isn't known yet
