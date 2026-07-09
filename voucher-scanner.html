@@ -90,6 +90,13 @@ tr:hover td { background: #ffffff08; }
   <div class="result-card" id="resultCard">
     <h3>📋 Στοιχεία Voucher</h3>
     <div id="typeBadge"></div>
+
+    <button type="button" onclick="toggleRawText()" style="background:#333;color:#c9b97a;border:1px solid #c9b97a44;border-radius:6px;padding:6px 12px;font-size:0.8rem;cursor:pointer;margin-bottom:10px;">🔍 Εμφάνιση Ακατέργαστου Κειμένου (debug)</button>
+    <div id="rawTextBox" style="display:none;background:#111;border-radius:8px;padding:10px;margin-bottom:14px;">
+      <pre id="rawTextContent" style="white-space:pre-wrap;font-size:0.75rem;color:#aaa;max-height:220px;overflow:auto;"></pre>
+      <button type="button" onclick="copyRawText()" style="margin-top:8px;background:#c9b97a;color:#1a1a1a;border:none;border-radius:6px;padding:6px 12px;font-size:0.8rem;cursor:pointer;">📋 Αντιγραφή</button>
+    </div>
+
     <div class="field-row">
       <div class="field" style="grid-column:1/-1"><label>Group ID</label><input type="text" id="fGroupId" placeholder="—"/></div>
     </div>
@@ -159,6 +166,7 @@ const priceList = {
 
 let currentFile = null;
 let currentFiles = [];
+let lastRawText = '';
 let currentType = '';
 let vouchers = [];
 
@@ -226,6 +234,25 @@ async function runOCR(file) {
   return text;
 }
 
+function toggleRawText() {
+  const box = document.getElementById('rawTextBox');
+  const content = document.getElementById('rawTextContent');
+  if (box.style.display === 'none') {
+    content.textContent = lastRawText || '(δεν υπάρχει ακόμα κείμενο - σκανάρισε πρώτα ένα voucher)';
+    box.style.display = 'block';
+  } else {
+    box.style.display = 'none';
+  }
+}
+
+function copyRawText() {
+  navigator.clipboard.writeText(lastRawText || '').then(() => {
+    showStatus('📋 Αντιγράφηκε το ακατέργαστο κείμενο', 'success');
+  }).catch(() => {
+    showStatus('❌ Δεν ήταν δυνατή η αντιγραφή', 'error');
+  });
+}
+
 async function scanVoucher() {
   if (!currentFiles || !currentFiles.length) return;
 
@@ -238,6 +265,7 @@ async function scanVoucher() {
     showStatus('Ανάλυση voucher...', 'loading');
     try {
       const text = await runOCR(currentFiles[0]);
+      lastRawText = text;
       parseVoucher(text);
       showStatus('✅ Voucher αναλύθηκε επιτυχώς!', 'success');
     } catch (err) {
