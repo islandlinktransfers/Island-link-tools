@@ -3,29 +3,29 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Voucher Scanner - MyCretaCab.com</title>
-<link rel="manifest" href="manifest-voucher-boss.json"/>
-<meta name="theme-color" content="#0d0d0d"/>
-<link rel="apple-touch-icon" href="icon-boss-180.png"/>
-<link rel="icon" href="icon-boss-192.png"/>
+<title>Voucher Scanner - Island Link</title>
+<link rel="manifest" href="manifest-voucher.json"/>
+<meta name="theme-color" content="#1a1a1a"/>
+<link rel="apple-touch-icon" href="icon-180.png"/>
+<link rel="icon" href="icon-192.png"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="MyCretaCab Voucher"/>
+<meta name="apple-mobile-web-app-title" content="Voucher Scanner"/>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #0d0d0d; color: #e5e7eb; min-height: 100vh; padding: 24px; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #f0ead8; min-height: 100vh; padding: 24px; }
 .container { max-width: 900px; margin: 0 auto; }
-h1 { font-size: 1.6rem; color: #2196F3; margin-bottom: 8px; text-align: center; }
+h1 { font-size: 1.6rem; color: #c9b97a; margin-bottom: 8px; text-align: center; }
 .subtitle { text-align: center; color: #b0a98a; font-size: 0.9rem; margin-bottom: 32px; }
-.upload-area { background: #2a2a2a; border: 2px dashed #2196F344; border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-bottom: 24px; }
-.upload-area:hover { border-color: #2196F3; }
+.upload-area { background: #2a2a2a; border: 2px dashed #c9b97a44; border-radius: 12px; padding: 48px 24px; text-align: center; cursor: pointer; transition: border-color 0.2s; margin-bottom: 24px; }
+.upload-area:hover { border-color: #c9b97a; }
 .upload-area p { color: #b0a98a; font-size: 0.9rem; margin-top: 12px; }
-.upload-area strong { color: #2196F3; }
+.upload-area strong { color: #c9b97a; }
 #fileInput { display: none; }
 #preview { display: none; margin-bottom: 24px; text-align: center; }
-#preview img { max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #2196F333; }
-.btn { display: block; width: 100%; background: #2196F3; color: #0d0d0d; font-size: 1rem; font-weight: 700; padding: 14px; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 16px; }
+#preview img { max-width: 100%; max-height: 300px; border-radius: 8px; border: 1px solid #c9b97a33; }
+.btn { display: block; width: 100%; background: #c9b97a; color: #1a1a1a; font-size: 1rem; font-weight: 700; padding: 14px; border: none; border-radius: 8px; cursor: pointer; transition: background 0.2s; margin-bottom: 16px; }
 .btn:hover { background: #e8d99a; }
 .btn:disabled { background: #555; cursor: not-allowed; color: #888; }
 .btn-green { background: #25D366; color: white; }
@@ -33,27 +33,27 @@ h1 { font-size: 1.6rem; color: #2196F3; margin-bottom: 8px; text-align: center; 
 .btn-export { background: #217346; color: white; }
 .btn-export:hover { background: #1a5c38; }
 #status { text-align: center; padding: 12px; border-radius: 8px; margin-bottom: 16px; display: none; font-size: 0.9rem; }
-.status-loading { background: #2a2a2a; color: #2196F3; }
+.status-loading { background: #2a2a2a; color: #c9b97a; }
 .status-success { background: #1a3a1a; color: #25D366; }
 .status-error { background: #3a1a1a; color: #ff6b6b; }
-.result-card { background: #2a2a2a; border: 1px solid #2196F333; border-radius: 12px; padding: 24px; margin-bottom: 24px; display: none; }
-.result-card h3 { color: #2196F3; margin-bottom: 16px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.result-card { background: #2a2a2a; border: 1px solid #c9b97a33; border-radius: 12px; padding: 24px; margin-bottom: 24px; display: none; }
+.result-card h3 { color: #c9b97a; margin-bottom: 16px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; }
 .type-badge { display: inline-block; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 700; margin-bottom: 16px; }
 .type-inbound { background: #1a3a1a; color: #25D366; border: 1px solid #25D36644; }
 .type-outbound { background: #1a1a3a; color: #6b9bff; border: 1px solid #6b9bff44; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-.field { background: #0d0d0d; border-radius: 8px; padding: 12px 16px; }
-.field label { display: block; font-size: 0.72rem; color: #2196F3; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
-.field input { width: 100%; background: transparent; border: none; color: #e5e7eb; font-size: 0.95rem; font-family: inherit; outline: none; }
-.price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #2196F322; }
-.price-box { background: #0d0d0d; border-radius: 8px; padding: 16px; text-align: center; }
+.field { background: #1a1a1a; border-radius: 8px; padding: 12px 16px; }
+.field label { display: block; font-size: 0.72rem; color: #c9b97a; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.field input { width: 100%; background: transparent; border: none; color: #f0ead8; font-size: 0.95rem; font-family: inherit; outline: none; }
+.price-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid #c9b97a22; }
+.price-box { background: #1a1a1a; border-radius: 8px; padding: 16px; text-align: center; }
 .price-box label { display: block; font-size: 0.72rem; color: #b0a98a; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 8px; }
-.price-box .price { font-size: 1.6rem; font-weight: 700; color: #2196F3; }
-.table-section { background: #2a2a2a; border: 1px solid #2196F333; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
-.table-section h3 { color: #2196F3; margin-bottom: 16px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; }
+.price-box .price { font-size: 1.6rem; font-weight: 700; color: #c9b97a; }
+.table-section { background: #2a2a2a; border: 1px solid #c9b97a33; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+.table-section h3 { color: #c9b97a; margin-bottom: 16px; font-size: 1rem; text-transform: uppercase; letter-spacing: 0.08em; }
 table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-th { background: #0d0d0d; color: #2196F3; padding: 10px 8px; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
-td { padding: 10px 8px; border-bottom: 1px solid #ffffff11; color: #e5e7eb; }
+th { background: #1a1a1a; color: #c9b97a; padding: 10px 8px; text-align: left; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; }
+td { padding: 10px 8px; border-bottom: 1px solid #ffffff11; color: #f0ead8; }
 tr:last-child td { border-bottom: none; }
 tr:hover td { background: #ffffff08; }
 .no-match { color: #ff6b6b; }
@@ -65,51 +65,11 @@ tr:hover td { background: #ffffff08; }
 </head>
 <body>
 <div class="container">
-  <div style="text-align:center;margin-bottom:8px;">
-    <img src="mycretacab-logo.png" alt="MyCretaCab.com" style="max-width:220px;width:100%;height:auto;background:#fff;border-radius:8px;padding:10px 16px;"/>
-  </div>
-  <h1 style="font-size:1.1rem;">Voucher Scanner</h1>
+  <h1>🚗 Island Link - Voucher Scanner</h1>
   <p class="subtitle">Ανέβασε φωτογραφία voucher → αυτόματη καταχώρηση στο Google Sheets</p>
 
-  <div style="background:#0f2438;border:1px solid #2196F3;border-radius:10px;padding:16px;margin-bottom:20px;">
-    <strong style="color:#2196F3;">⚙️ ΡΥΘΜΙΣΗ (μία φορά, πριν το χρησιμοποιήσεις):</strong>
-    <ol style="margin:10px 0 0 18px;padding:0;font-size:0.85rem;color:#eee;line-height:1.6;">
-      <li>Δημιούργησε ένα νέο <strong>Google Sheet</strong>.</li>
-      <li>Πάνω στο μενού: <strong>Επεκτάσεις → Apps Script</strong>.</li>
-      <li>Σβήσε ό,τι υπάρχει μέσα, κάνε paste τον κώδικα από το αρχείο <strong>apps-script-boss.gs</strong> που σου δόθηκε μαζί με αυτή τη σελίδα.</li>
-      <li>Πάνω δεξιά: <strong>Deploy → New deployment</strong> → τύπος <strong>Web app</strong> → "Execute as": <strong>Me</strong> → "Who has access": <strong>Anyone</strong> → <strong>Deploy</strong>.</li>
-      <li>Αντίγραψε το URL που σου δίνει (τελειώνει σε <code>/exec</code>).</li>
-      <li>Μέσα σε αυτό το αρχείο (voucher-scanner-boss.html), βρες τη γραμμή που λέει
-        <code>PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE</code> και αντικατέστησέ την με το URL σου.</li>
-      <li>Λίγο πιο κάτω, βρες το αντικείμενο <code>DRIVER_PINS</code> και πρόσθεσε μία γραμμή για <strong>κάθε οδηγό</strong> σου, με ένα δικό του 4ψήφιο PIN (π.χ. <code>'F1 - Γιώργος': '1234',</code>). Αν δύο οδηγοί μοιράζονται το ίδιο όχημα, βάλε δύο ξεχωριστές γραμμές (π.χ. "F1 - Γιώργος" και "F1 - Νίκος").</li>
-      <li>Στην ίδια περιοχή, πρόσθεσε ένα αντίστοιχο <code>&lt;option&gt;</code> στη λίστα <code>loginDriverSelect</code> για κάθε οδηγό, ίδιο ακριβώς όνομα με το κλειδί στο <code>DRIVER_PINS</code>.</li>
-    </ol>
-    <p style="font-size:0.8rem;color:#2196F3;margin-top:10px;">Κάθε οδηγός μπαίνει <strong>μία φορά</strong> στο κινητό του με το όνομά του + το PIN του — μετά το κινητό το θυμάται μόνιμα. Έτσι δεν γίνεται να καταχωρήσει κατά λάθος στο tab κάποιου άλλου.</p>
-  </div>
-
-  <!-- LOGIN SCREEN: shown until this device is authenticated as a specific driver -->
-  <div class="field" id="loginScreen" style="margin-bottom:16px;">
-    <label>Επίλεξε Οδηγό</label>
-    <select id="loginDriverSelect">
-      <option value="">— Επίλεξε όνομα —</option>
-      <!-- Ο ιδιοκτήτης του εργαλείου προσθέτει εδώ τα ονόματα των οδηγών, ένα option ανά οδηγό -->
-      <option value="F1 - Γιώργος">F1 - Γιώργος</option>
-    </select>
-    <label style="margin-top:10px;">PIN</label>
-    <input type="password" id="loginPin" inputmode="numeric" maxlength="4" placeholder="4ψήφιο PIN"/>
-    <button type="button" class="btn" style="margin-top:12px;" onclick="attemptLogin()">Είσοδος</button>
-    <div id="loginError" style="color:#F87171;font-size:0.85rem;margin-top:8px;"></div>
-  </div>
-
-  <!-- MAIN APP: hidden until logged in -->
-  <div id="mainApp" style="display:none;">
-  <div class="field" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
-    <div><span style="color:#888;font-size:0.8rem;">Οδηγός:</span> <strong id="loggedInDriverLabel" style="color:#2196F3;"></strong></div>
-    <button type="button" onclick="logoutDriver()" style="background:none;border:1px solid #555;color:#aaa;border-radius:6px;padding:4px 10px;font-size:0.75rem;cursor:pointer;">Αλλαγή οδηγού</button>
-  </div>
-
   <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#2196F3" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#c9b97a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
       <polyline points="17 8 12 3 7 8"/>
       <line x1="12" y1="3" x2="12" y2="15"/>
@@ -131,10 +91,10 @@ tr:hover td { background: #ffffff08; }
     <h3>📋 Στοιχεία Voucher</h3>
     <div id="typeBadge"></div>
 
-    <button type="button" onclick="toggleRawText()" style="background:#333;color:#2196F3;border:1px solid #2196F344;border-radius:6px;padding:6px 12px;font-size:0.8rem;cursor:pointer;margin-bottom:10px;">🔍 Εμφάνιση Ακατέργαστου Κειμένου (debug)</button>
+    <button type="button" onclick="toggleRawText()" style="background:#333;color:#c9b97a;border:1px solid #c9b97a44;border-radius:6px;padding:6px 12px;font-size:0.8rem;cursor:pointer;margin-bottom:10px;">🔍 Εμφάνιση Ακατέργαστου Κειμένου (debug)</button>
     <div id="rawTextBox" style="display:none;background:#111;border-radius:8px;padding:10px;margin-bottom:14px;">
       <pre id="rawTextContent" style="white-space:pre-wrap;font-size:0.75rem;color:#aaa;max-height:220px;overflow:auto;"></pre>
-      <button type="button" onclick="copyRawText()" style="margin-top:8px;background:#2196F3;color:#0d0d0d;border:none;border-radius:6px;padding:6px 12px;font-size:0.8rem;cursor:pointer;">📋 Αντιγραφή</button>
+      <button type="button" onclick="copyRawText()" style="margin-top:8px;background:#c9b97a;color:#1a1a1a;border:none;border-radius:6px;padding:6px 12px;font-size:0.8rem;cursor:pointer;">📋 Αντιγραφή</button>
     </div>
 
     <div class="field-row">
@@ -162,7 +122,7 @@ tr:hover td { background: #ffffff08; }
       <table>
         <thead>
           <tr>
-            <th>#</th><th>Οδηγός</th><th>Τύπος</th><th>Ώρα</th><th>Group ID</th><th>Περιοχή</th><th>Ξενοδοχείο</th><th>Με ΦΠΑ</th><th>Χωρίς ΦΠΑ</th>
+            <th>#</th><th>Τύπος</th><th>Ώρα</th><th>Group ID</th><th>Περιοχή</th><th>Ξενοδοχείο</th><th>Με ΦΠΑ</th><th>Χωρίς ΦΠΑ</th>
           </tr>
         </thead>
         <tbody id="tableBody"></tbody>
@@ -172,12 +132,11 @@ tr:hover td { background: #ffffff08; }
       <button class="btn btn-export" onclick="exportToCSV()">📥 Export σε CSV</button>
     </div>
   </div>
-  </div>
 </div>
 
 <script>
 const VISION_KEY = 'AIzaSyCFoccrFL9LZ8HjYNtXJWRtQeWkXJZeovc';
-const SHEETS_URL = 'PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycby0bJEroq5wmCbxhSzUH-nL2aTgcgiMENjMm8fxLfs7WRaFwHzs-fyx-pVDckSk7Tph_A/exec';
 
 const priceList = {
   'ADELE': 67.80, 'AGIA GALINI': 72.32, 'AGIA PELAGIA': 28.25,
@@ -208,68 +167,6 @@ const priceList = {
 let currentFile = null;
 let currentFiles = [];
 let lastRawText = '';
-
-// Ο ιδιοκτήτης του εργαλείου προσθέτει εδώ ένα PIN (4 ψηφία, ή όσα θέλει) για κάθε οδηγό.
-// Το όνομα-κλειδί εδώ πρέπει να είναι ΙΔΙΟ ακριβώς με το value του <option> στο loginDriverSelect.
-const DRIVER_PINS = {
-  'F1 - Γιώργος': '1234',
-};
-
-let currentDriver = '';
-
-function attemptLogin() {
-  const select = document.getElementById('loginDriverSelect');
-  const pin = document.getElementById('loginPin').value.trim();
-  const errorBox = document.getElementById('loginError');
-  const name = select.value;
-
-  if (!name) {
-    errorBox.textContent = 'Επίλεξε πρώτα το όνομά σου.';
-    return;
-  }
-  if (!pin) {
-    errorBox.textContent = 'Γράψε το PIN σου.';
-    return;
-  }
-  if (DRIVER_PINS[name] !== pin) {
-    errorBox.textContent = '❌ Λάθος PIN. Δοκίμασε ξανά.';
-    return;
-  }
-
-  errorBox.textContent = '';
-  localStorage.setItem('islandLinkAuthDriver', name);
-  unlockAppFor(name);
-}
-
-function unlockAppFor(name) {
-  currentDriver = name;
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('mainApp').style.display = 'block';
-  document.getElementById('loggedInDriverLabel').textContent = name;
-}
-
-function logoutDriver() {
-  if (!confirm('Αλλαγή οδηγού σε αυτό το κινητό;')) return;
-  localStorage.removeItem('islandLinkAuthDriver');
-  currentDriver = '';
-  document.getElementById('loginPin').value = '';
-  document.getElementById('loginDriverSelect').value = '';
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'block';
-}
-
-// Single source of truth for "which driver is this" - used everywhere instead of
-// reading a text field, so the sheet-tab name is always exactly consistent.
-function getDriverName() {
-  return currentDriver;
-}
-
-window.addEventListener('DOMContentLoaded', () => {
-  const saved = localStorage.getItem('islandLinkAuthDriver');
-  if (saved && DRIVER_PINS.hasOwnProperty(saved)) {
-    unlockAppFor(saved);
-  }
-});
 let currentType = '';
 let vouchers = [];
 
@@ -358,12 +255,6 @@ function copyRawText() {
 
 async function scanVoucher() {
   if (!currentFiles || !currentFiles.length) return;
-
-  const driverName = getDriverName();
-  if (!driverName) {
-    showStatus('⚠️ Επίλεξε πρώτα τον οδηγό (ή γράψε νέο όνομα) πριν σκανάρεις', 'error');
-    return;
-  }
 
   const btn = document.getElementById('scanBtn');
   btn.disabled = true;
@@ -720,15 +611,9 @@ function parseVoucher(text) {
 }
 
 async function saveCurrentEntry() {
-  if (SHEETS_URL.includes('PASTE_YOUR_GOOGLE_APPS_SCRIPT_URL_HERE')) {
-    throw new Error('Δεν έχει ρυθμιστεί ακόμα το Google Sheet — δες τις οδηγίες "ΡΥΘΜΙΣΗ" πάνω στη σελίδα');
-  }
   const priceVat = document.getElementById('priceWithVat').textContent.replace('€', '').replace('❌ Δεν βρέθηκε', '');
   const priceNoVat = document.getElementById('priceWithoutVat').textContent.replace('€', '').replace('❌', '');
-  const driver = getDriverName() || 'Άγνωστος';
-
   const entry = {
-    driver,
     afixis: currentType === 'ΑΦΙΞΗ' ? '✅' : '',
     anaxorisis: currentType === 'ΑΝΑΧΩΡΗΣΗ' ? '✅' : '',
     ora: document.getElementById('fTime').value,
@@ -772,7 +657,6 @@ function renderTable() {
   tbody.innerHTML = vouchers.map((v, i) => `
     <tr>
       <td>${i+1}</td>
-      <td>${v.driver || ''}</td>
       <td><span class="${v.type === 'ΑΦΙΞΗ' ? 'badge-in' : 'badge-out'}">${v.type}</span></td>
       <td>${v.afixis || v.anaxorisis}</td>
       <td>${v.ora}</td>
@@ -786,8 +670,8 @@ function renderTable() {
 }
 
 function exportToCSV() {
-  const headers = ['Οδηγός','Τύπος','Ημερομηνία','Ώρα','Group ID','Περιοχή','Ξενοδοχείο','Τιμή με ΦΠΑ','Τιμή χωρίς ΦΠΑ'];
-  const rows = vouchers.map(v => [v.driver||'', v.type, v.afixis||v.anaxorisis, v.ora, v.groupId, v.perioxh, v.xenodoxeio, v.priceVat.replace('€',''), v.priceNoVat.replace('€','')]);
+  const headers = ['Τύπος','Ημερομηνία','Ώρα','Group ID','Περιοχή','Ξενοδοχείο','Τιμή με ΦΠΑ','Τιμή χωρίς ΦΠΑ'];
+  const rows = vouchers.map(v => [v.type, v.afixis||v.anaxorisis, v.ora, v.groupId, v.perioxh, v.xenodoxeio, v.priceVat.replace('€',''), v.priceNoVat.replace('€','')]);
   const csv = [headers,...rows].map(r => r.map(c => `"${c}"`).join(',')).join('\n');
   const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);

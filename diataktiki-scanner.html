@@ -681,17 +681,23 @@ function extractFormatD(text) {
   const paxM = cleaned.match(/Pax\s*:?\s*(\d+)/i);
   const flightM = cleaned.match(/\b([A-Z]{2}\d{3,5})\b/);
   // Hotel / drop-off address; optionally swallow a continuation address line (e.g. "...MAIN ROAD")
-  const placeM = cleaned.match(/([A-Z][A-Za-z]*(?:\s[A-Za-z.]+)*\s(?:APT|HTL|HOTEL)\s[A-Za-z .]+(?:\n[A-Z][A-Za-z .]*(?:ROAD|STREET|AVE|BLVD|STR)\.?[A-Za-z .]*)?)/i);
+  const placeMKeyword = cleaned.match(/([A-Z][A-Za-z]*(?:\s[A-Za-z.]+)*\s(?:APT|HTL|HOTEL)\s[A-Za-z .]+(?:\n[A-Z][A-Za-z .]*(?:ROAD|STREET|AVE|BLVD|STR)\.?[A-Za-z .]*)?)/i);
+  // Fallback for hotel names with none of the above keywords (e.g. "CACTUS ROYAL"):
+  // take whatever ALL-CAPS phrase sits right after "PRIVATE TRANSFER", stopping at the next digit
+  const placeMGeneric = cleaned.match(/PRIVATE\s+TRANSFER\s*\n?\s*([A-Z][A-Za-z .]*?)\s*\n?\s*\d/);
+  const placeM = placeMKeyword || placeMGeneric;
 
   // Client name: the ALL-CAPS run sitting between the hotel address and the flight code
-  // (avoids the header-glue problem and doesn't depend on exact digit spacing)
+  // (avoids the header-glue problem and doesn't depend on exact digit spacing).
+  // Capped at 2 words so it doesn't swallow a repeated hotel name that sometimes
+  // follows immediately after (e.g. "PETRA VANDERPLOEG CACTUS ROYAL ...").
   let clientName = '';
   if (placeM && flightM) {
     const placeEnd = cleaned.indexOf(placeM[0]) + placeM[0].length;
     const flightIdx = cleaned.indexOf(flightM[0], placeEnd);
     if (flightIdx > placeEnd) {
       const segment = cleaned.slice(placeEnd, flightIdx);
-      const nameMatch = segment.match(/\b[A-Z]{2,}(?:\s[A-Z]{2,}){0,2}\b/);
+      const nameMatch = segment.match(/\b[A-Z]{2,}(?:\s[A-Z]{2,}){0,1}\b/);
       if (nameMatch) clientName = nameMatch[0].trim();
     }
   }
