@@ -108,6 +108,32 @@ h1 {
 .entry-delete:hover { color: #FB7185; }
 
 .empty-msg { color: #6f5c8a; font-size: 0.85rem; text-align: center; padding: 20px; }
+
+.delta-text { font-size: 0.72rem; margin-top: 4px; font-weight: 600; }
+.delta-text.better { color: #34D399; }
+.delta-text.worse { color: #FB7185; }
+.delta-text.neutral { color: #A594C0; }
+
+.goal-card { margin-bottom: 16px; }
+.goal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.goal-edit-btn { background: none; border: 1px solid rgba(168,85,247,0.4); color: #E879F9; border-radius: 6px; padding: 4px 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+.goal-edit-btn:hover { background: rgba(168,85,247,0.12); }
+.goal-name { font-family: 'Oswald', sans-serif; font-size: 1.1rem; color: #F3E8FF; margin-bottom: 8px; }
+.goal-bar-track { background: #241332; border-radius: 8px; height: 14px; overflow: hidden; margin-bottom: 6px; }
+.goal-bar-fill { background: linear-gradient(90deg, #F0399B, #A855F7); height: 100%; border-radius: 8px; transition: width 0.3s; }
+.goal-bar-fill.complete { background: linear-gradient(90deg, #34D399, #10B981); }
+.goal-progress-text { font-size: 0.8rem; color: #A594C0; }
+.goal-empty { color: #A594C0; font-size: 0.85rem; }
+
+.section-title-row { display: flex; align-items: center; justify-content: space-between; margin: 26px 0 12px; }
+
+.limit-field { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.limit-field label { flex: 0 0 150px; font-size: 0.8rem; color: #A594C0; margin: 0; }
+.limit-field input { flex: 1; }
+
+.cat-row.over-limit .cat-bar-fill { background: linear-gradient(90deg, #FB7185, #EF4444); }
+.cat-row.near-limit .cat-bar-fill { background: linear-gradient(90deg, #FBBF24, #F0399B); }
+.cat-limit-warning { font-size: 0.7rem; color: #FB7185; flex: 0 0 100%; margin-top: -4px; margin-bottom: 6px; }
 </style>
 </head>
 <body>
@@ -130,10 +156,31 @@ h1 {
   <div class="card">
     <div class="card-label">Expenses This Month</div>
     <div class="card-value expense" id="totalExpense">€0.00</div>
+    <div class="delta-text" id="expenseDelta"></div>
   </div>
   <div class="card wide">
     <div class="card-label">Net Balance This Month</div>
     <div class="card-value net" id="netBalance">€0.00</div>
+  </div>
+</div>
+
+<div class="card wide goal-card" id="goalCard">
+  <div class="goal-header">
+    <div class="card-label">🎯 Savings Goal</div>
+    <button type="button" class="goal-edit-btn" onclick="toggleGoalForm()">Edit</button>
+  </div>
+  <div id="goalDisplay"></div>
+  <div class="form-card" id="goalForm" style="margin-top:12px;">
+    <div class="field">
+      <label>Goal name</label>
+      <input type="text" id="goalName" placeholder="e.g. Santorini Trip"/>
+    </div>
+    <div class="field">
+      <label>Target amount (€)</label>
+      <input type="number" id="goalTarget" inputmode="decimal" placeholder="e.g. 500"/>
+    </div>
+    <button class="btn btn-save" onclick="saveGoal()">Save Goal</button>
+    <button class="btn btn-cancel" onclick="toggleGoalForm()">Cancel</button>
   </div>
 </div>
 
@@ -189,7 +236,15 @@ h1 {
   <button class="btn btn-cancel" onclick="toggleForm('expense')">Cancel</button>
 </div>
 
-<div class="section-title">📊 Expenses by Category (this month)</div>
+<div class="section-title-row">
+  <div class="section-title" style="margin:0;">📊 Expenses by Category (this month)</div>
+  <button type="button" class="goal-edit-btn" onclick="toggleLimitsForm()">Set Limits</button>
+</div>
+<div class="form-card" id="limitsForm">
+  <div id="limitsFields"></div>
+  <button class="btn btn-save" onclick="saveLimits()">Save Limits</button>
+  <button class="btn btn-cancel" onclick="toggleLimitsForm()">Cancel</button>
+</div>
 <div id="categoryBreakdown"></div>
 
 <div class="section-title">🕒 History</div>
@@ -197,6 +252,9 @@ h1 {
 
 <script>
 const STORAGE_KEY = 'sofiaBudgetEntries';
+const LIMITS_KEY = 'sofiaCategoryLimits';
+const GOAL_KEY = 'sofiaSavingsGoal';
+const CATEGORIES = ['Gym', 'Clothes', 'Beauty & Care', 'Food', 'Home / Household', 'Bills', 'Entertainment', 'Other'];
 
 function loadEntries() {
   try {
@@ -208,6 +266,70 @@ function loadEntries() {
 
 function saveEntries(entries) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function loadLimits() {
+  try {
+    return JSON.parse(localStorage.getItem(LIMITS_KEY)) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function loadGoal() {
+  try {
+    return JSON.parse(localStorage.getItem(GOAL_KEY)) || null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function toggleGoalForm() {
+  const form = document.getElementById('goalForm');
+  const isOpening = !form.classList.contains('open');
+  form.classList.toggle('open');
+  if (isOpening) {
+    const goal = loadGoal();
+    document.getElementById('goalName').value = goal ? goal.name : '';
+    document.getElementById('goalTarget').value = goal ? goal.target : '';
+  }
+}
+
+function saveGoal() {
+  const name = document.getElementById('goalName').value.trim();
+  const target = parseFloat(document.getElementById('goalTarget').value);
+  if (!name) { alert('Give your goal a name'); return; }
+  if (!target || target <= 0) { alert('Enter a valid target amount'); return; }
+  localStorage.setItem(GOAL_KEY, JSON.stringify({ name, target }));
+  document.getElementById('goalForm').classList.remove('open');
+  render();
+}
+
+function toggleLimitsForm() {
+  const form = document.getElementById('limitsForm');
+  const isOpening = !form.classList.contains('open');
+  form.classList.toggle('open');
+  if (isOpening) {
+    const limits = loadLimits();
+    document.getElementById('limitsFields').innerHTML = CATEGORIES.map(cat => `
+      <div class="limit-field">
+        <label>${cat}</label>
+        <input type="number" inputmode="decimal" placeholder="No limit" data-cat="${cat}" value="${limits[cat] || ''}"/>
+      </div>
+    `).join('');
+  }
+}
+
+function saveLimits() {
+  const inputs = document.querySelectorAll('#limitsFields input');
+  const limits = {};
+  inputs.forEach(inp => {
+    const val = parseFloat(inp.value);
+    if (val > 0) limits[inp.dataset.cat] = val;
+  });
+  localStorage.setItem(LIMITS_KEY, JSON.stringify(limits));
+  document.getElementById('limitsForm').classList.remove('open');
+  render();
 }
 
 function todayStr() {
@@ -305,10 +427,49 @@ function render() {
   document.getElementById('totalExpense').textContent = formatEUR(totalExpense);
   document.getElementById('netBalance').textContent = formatEUR(totalIncome - totalExpense);
 
-  const categories = ['Gym', 'Clothes', 'Beauty & Care', 'Food', 'Home / Household', 'Bills', 'Entertainment', 'Other'];
-  const catTotals = categories.map(cat => ({
+  // Month-over-month comparison (expenses vs the previous month)
+  let prevMonth = viewMonth - 1, prevYear = viewYear;
+  if (prevMonth < 0) { prevMonth = 11; prevYear--; }
+  const prevMonthExpense = entries
+    .filter(e => e.type === 'expense')
+    .filter(e => { const d = new Date(e.date); return d.getMonth() === prevMonth && d.getFullYear() === prevYear; })
+    .reduce((s, e) => s + e.amount, 0);
+  const deltaEl = document.getElementById('expenseDelta');
+  if (prevMonthExpense > 0) {
+    const pct = Math.round(((totalExpense - prevMonthExpense) / prevMonthExpense) * 100);
+    if (pct <= 0) {
+      deltaEl.textContent = `↓ ${Math.abs(pct)}% vs last month`;
+      deltaEl.className = 'delta-text better';
+    } else {
+      deltaEl.textContent = `↑ ${pct}% vs last month`;
+      deltaEl.className = 'delta-text worse';
+    }
+  } else {
+    deltaEl.textContent = '';
+  }
+
+  // Savings goal - progress is the all-time net balance (total saved so far)
+  const goal = loadGoal();
+  const goalDisplayEl = document.getElementById('goalDisplay');
+  if (!goal) {
+    goalDisplayEl.innerHTML = '<div class="goal-empty">No goal set yet — tap "Edit" to add one</div>';
+  } else {
+    const allTimeNet = entries.reduce((s, e) => s + (e.type === 'income' ? e.amount : -e.amount), 0);
+    const saved = Math.max(0, allTimeNet);
+    const pct = Math.min(100, (saved / goal.target) * 100);
+    const complete = saved >= goal.target;
+    goalDisplayEl.innerHTML = `
+      <div class="goal-name">${goal.name}</div>
+      <div class="goal-bar-track"><div class="goal-bar-fill ${complete ? 'complete' : ''}" style="width:${pct.toFixed(0)}%"></div></div>
+      <div class="goal-progress-text">${complete ? '🎉 Goal reached! ' : ''}${formatEUR(saved)} of ${formatEUR(goal.target)} (${pct.toFixed(0)}%)</div>
+    `;
+  }
+
+  const limits = loadLimits();
+  const catTotals = CATEGORIES.map(cat => ({
     cat,
-    amount: monthEntries.filter(e => e.type === 'expense' && e.category === cat).reduce((s, e) => s + e.amount, 0)
+    amount: monthEntries.filter(e => e.type === 'expense' && e.category === cat).reduce((s, e) => s + e.amount, 0),
+    limit: limits[cat] || null
   }));
   const maxCat = Math.max(1, ...catTotals.map(c => c.amount));
 
@@ -316,13 +477,20 @@ function render() {
   if (totalExpense === 0) {
     breakdownEl.innerHTML = '<div class="empty-msg">No expenses this month yet</div>';
   } else {
-    breakdownEl.innerHTML = catTotals.filter(c => c.amount > 0).map(c => `
-      <div class="cat-row">
+    breakdownEl.innerHTML = catTotals.filter(c => c.amount > 0).map(c => {
+      const overLimit = c.limit && c.amount > c.limit;
+      const nearLimit = c.limit && !overLimit && c.amount >= c.limit * 0.8;
+      const rowClass = overLimit ? 'over-limit' : (nearLimit ? 'near-limit' : '');
+      const amountText = c.limit ? `${formatEUR(c.amount)} / ${formatEUR(c.limit)}` : formatEUR(c.amount);
+      const warning = overLimit ? `<div class="cat-limit-warning">⚠️ Over your ${c.cat} limit</div>` : '';
+      return `
+      <div class="cat-row ${rowClass}">
         <div class="cat-name">${c.cat}</div>
         <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(c.amount / maxCat * 100).toFixed(0)}%"></div></div>
-        <div class="cat-amount">${formatEUR(c.amount)}</div>
+        <div class="cat-amount">${amountText}</div>
       </div>
-    `).join('');
+      ${warning}`;
+    }).join('');
   }
 
   const listEl = document.getElementById('entriesList');
