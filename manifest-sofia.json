@@ -1,0 +1,16 @@
+{
+  "name": "Sofia's Budget",
+  "short_name": "Sofia Budget",
+  "description": "Track income and expenses, one tap at a time",
+  "start_url": "./budget-sofia.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d0616",
+  "theme_color": "#0d0616",
+  "icons": [
+    { "src": "icon-sofia-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-sofia-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-sofia-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

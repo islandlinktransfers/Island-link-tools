@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Sofia's Budget</title>
+<link rel="manifest" href="manifest-sofia.json"/>
+<meta name="theme-color" content="#0d0616"/>
+<link rel="apple-touch-icon" href="icon-sofia-180.png"/>
+<link rel="icon" href="icon-sofia-192.png"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="Sofia Budget"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Manrope', 'Segoe UI', sans-serif;
+  background: #0d0616;
+  background-image: radial-gradient(circle at 15% 0%, rgba(240,57,155,0.14), transparent 45%),
+                     radial-gradient(circle at 85% 15%, rgba(124,58,237,0.16), transparent 40%);
+  background-attachment: fixed;
+  color: #F3E8FF;
+  min-height: 100vh;
+  padding: 24px 20px;
+  padding-bottom: 60px;
+}
+
+h1 {
+  font-family: 'Oswald', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.15;
+  background: linear-gradient(120deg, #F0399B 0%, #A855F7 55%, #7C3AED 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  display: inline-block;
+}
+.title-underline {
+  height: 4px;
+  width: 72px;
+  border-radius: 3px;
+  margin: 6px 0 14px;
+  background: linear-gradient(90deg, #F0399B, #7C3AED);
+  box-shadow: 0 0 12px rgba(168,85,247,0.7);
+}
+.subtitle { color: #A594C0; font-size: 0.85rem; margin-bottom: 22px; }
+
+.month-nav { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 16px; }
+.month-arrow { background: #1b0f2b; color: #F0399B; border: 1px solid #A855F744; border-radius: 10px; width: 44px; height: 44px; font-size: 1rem; cursor: pointer; }
+.month-arrow:hover { background: #2a1640; }
+.month-label { font-family: 'Oswald', sans-serif; font-size: 1.05rem; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #F3E8FF; min-width: 140px; text-align: center; }
+
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.card { background: #1b0f2b; border: 1px solid rgba(168,85,247,0.18); border-radius: 14px; padding: 16px; }
+.card.wide { grid-column: 1 / -1; background: linear-gradient(135deg, rgba(240,57,155,0.12), rgba(124,58,237,0.12)), #1b0f2b; box-shadow: 0 0 24px rgba(168,85,247,0.12); }
+.card-label { font-family: 'Manrope', sans-serif; font-size: 0.72rem; font-weight: 700; color: #A594C0; text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+.card-value { font-family: 'Oswald', sans-serif; font-size: 1.6rem; font-weight: 600; letter-spacing: 0.3px; }
+.card-value.income { color: #34D399; }
+.card-value.expense { color: #FB7185; }
+.card-value.net { color: #E879F9; text-shadow: 0 0 18px rgba(232,121,249,0.35); }
+
+.action-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.btn {
+  display: block; width: 100%; font-family: 'Oswald', sans-serif; font-size: 1rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px; padding: 15px; border: none; border-radius: 10px;
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+}
+.btn:active { transform: scale(0.97); }
+.btn-income { background: #34D399; color: #052e1c; }
+.btn-income:hover { background: #5eeab3; }
+.btn-expense { background: #FB7185; color: #3a0812; }
+.btn-expense:hover { background: #fd94a1; }
+.btn-save { background: linear-gradient(120deg, #F0399B, #A855F7); color: #fff; margin-top: 8px; box-shadow: 0 4px 18px rgba(168,85,247,0.4); }
+.btn-save:hover { box-shadow: 0 4px 22px rgba(168,85,247,0.6); }
+.btn-cancel { background: #2a1640; color: #cbb8dd; margin-top: 8px; }
+.btn-cancel:hover { background: #35204f; }
+
+.form-card { background: #1b0f2b; border: 1px solid rgba(168,85,247,0.18); border-radius: 14px; padding: 20px; margin-bottom: 20px; display: none; }
+.form-card.open { display: block; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 0.8rem; color: #A594C0; margin-bottom: 6px; font-weight: 600; }
+.field input, .field select { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #3a2456; background: #150a20; color: #F3E8FF; font-family: 'Manrope', sans-serif; font-size: 1rem; }
+.field input:focus, .field select:focus { outline: none; border-color: #F0399B; }
+
+.section-title { font-family: 'Oswald', sans-serif; font-size: 1.05rem; text-transform: uppercase; letter-spacing: 0.5px; color: #E879F9; margin: 26px 0 12px; font-weight: 600; }
+
+.cat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cat-name { flex: 0 0 130px; font-size: 0.85rem; color: #ddd; }
+.cat-bar-track { flex: 1; background: #241332; border-radius: 6px; height: 10px; overflow: hidden; }
+.cat-bar-fill { background: linear-gradient(90deg, #F0399B, #A855F7); height: 100%; border-radius: 6px; }
+.cat-amount { flex: 0 0 60px; text-align: right; font-size: 0.8rem; color: #A594C0; }
+
+.entry { display: flex; align-items: center; justify-content: space-between; background: #1b0f2b; border: 1px solid rgba(168,85,247,0.12); border-radius: 10px; padding: 12px 14px; margin-bottom: 8px; }
+.entry-left { display: flex; align-items: center; gap: 10px; }
+.entry-icon { font-size: 1.2rem; }
+.entry-desc { font-size: 0.9rem; }
+.entry-date { font-size: 0.75rem; color: #8875a3; }
+.entry-amount { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 0.95rem; }
+.entry-amount.income { color: #34D399; }
+.entry-amount.expense { color: #FB7185; }
+.entry-delete { background: none; border: none; color: #8875a3; font-size: 1.1rem; cursor: pointer; padding: 4px 8px; }
+.entry-delete:hover { color: #FB7185; }
+
+.empty-msg { color: #6f5c8a; font-size: 0.85rem; text-align: center; padding: 20px; }
+</style>
+</head>
+<body>
+
+<h1>Sofia's Budget</h1>
+<div class="title-underline"></div>
+<p class="subtitle">💜 Tap a button to add income or an expense — nothing else</p>
+
+<div class="month-nav">
+  <button class="month-arrow" onclick="changeMonth(-1)">◀</button>
+  <div class="month-label" id="monthLabel">July 2026</div>
+  <button class="month-arrow" onclick="changeMonth(1)">▶</button>
+</div>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-label">Income This Month</div>
+    <div class="card-value income" id="totalIncome">€0.00</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Expenses This Month</div>
+    <div class="card-value expense" id="totalExpense">€0.00</div>
+  </div>
+  <div class="card wide">
+    <div class="card-label">Net Balance This Month</div>
+    <div class="card-value net" id="netBalance">€0.00</div>
+  </div>
+</div>
+
+<div class="action-row">
+  <button class="btn btn-income" onclick="toggleForm('income')">➕ Income</button>
+  <button class="btn btn-expense" onclick="toggleForm('expense')">➖ Expense</button>
+</div>
+
+<div class="form-card" id="incomeForm">
+  <div class="field">
+    <label>Amount (€)</label>
+    <input type="number" id="incAmount" inputmode="decimal" placeholder="e.g. 150"/>
+  </div>
+  <div class="field">
+    <label>Source</label>
+    <input type="text" id="incSource" placeholder="e.g. Salary"/>
+  </div>
+  <div class="field">
+    <label>Date</label>
+    <input type="date" id="incDate"/>
+  </div>
+  <button class="btn btn-save" onclick="saveIncome()">Save Income</button>
+  <button class="btn btn-cancel" onclick="toggleForm('income')">Cancel</button>
+</div>
+
+<div class="form-card" id="expenseForm">
+  <div class="field">
+    <label>Amount (€)</label>
+    <input type="number" id="expAmount" inputmode="decimal" placeholder="e.g. 45"/>
+  </div>
+  <div class="field">
+    <label>Category</label>
+    <select id="expCategory">
+      <option>Gym</option>
+      <option>Clothes</option>
+      <option>Beauty & Care</option>
+      <option>Food</option>
+      <option>Home / Household</option>
+      <option>Bills</option>
+      <option>Entertainment</option>
+      <option>Other</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Description (optional)</label>
+    <input type="text" id="expDesc" placeholder="e.g. Gym membership"/>
+  </div>
+  <div class="field">
+    <label>Date</label>
+    <input type="date" id="expDate"/>
+  </div>
+  <button class="btn btn-save" onclick="saveExpense()">Save Expense</button>
+  <button class="btn btn-cancel" onclick="toggleForm('expense')">Cancel</button>
+</div>
+
+<div class="section-title">📊 Expenses by Category (this month)</div>
+<div id="categoryBreakdown"></div>
+
+<div class="section-title">🕒 History</div>
+<div id="entriesList"></div>
+
+<script>
+const STORAGE_KEY = 'sofiaBudgetEntries';
+
+function loadEntries() {
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveEntries(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function todayStr() {
+  const d = new Date();
+  return d.toISOString().split('T')[0];
+}
+
+function toggleForm(type) {
+  const incForm = document.getElementById('incomeForm');
+  const expForm = document.getElementById('expenseForm');
+  if (type === 'income') {
+    expForm.classList.remove('open');
+    incForm.classList.toggle('open');
+    if (incForm.classList.contains('open')) document.getElementById('incDate').value = todayStr();
+  } else {
+    incForm.classList.remove('open');
+    expForm.classList.toggle('open');
+    if (expForm.classList.contains('open')) document.getElementById('expDate').value = todayStr();
+  }
+}
+
+function saveIncome() {
+  const amount = parseFloat(document.getElementById('incAmount').value);
+  const source = document.getElementById('incSource').value.trim();
+  const dateVal = document.getElementById('incDate').value || todayStr();
+  if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
+  if (!source) { alert('Enter the income source'); return; }
+
+  const entries = loadEntries();
+  entries.push({ id: Date.now(), type: 'income', amount, label: source, date: dateVal });
+  saveEntries(entries);
+
+  document.getElementById('incAmount').value = '';
+  document.getElementById('incSource').value = '';
+  toggleForm('income');
+  render();
+}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const category = document.getElementById('expCategory').value;
+  const desc = document.getElementById('expDesc').value.trim();
+  const dateVal = document.getElementById('expDate').value || todayStr();
+  if (!amount || amount <= 0) { alert('Enter a valid amount'); return; }
+
+  const entries = loadEntries();
+  entries.push({ id: Date.now(), type: 'expense', amount, category, label: desc || category, date: dateVal });
+  saveEntries(entries);
+
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expDesc').value = '';
+  toggleForm('expense');
+  render();
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  const entries = loadEntries().filter(e => e.id !== id);
+  saveEntries(entries);
+  render();
+}
+
+let viewYear = new Date().getFullYear();
+let viewMonth = new Date().getMonth(); // 0-11
+
+const MONTH_NAMES = ['January','February','March','April','May','June',
+                     'July','August','September','October','November','December'];
+
+function changeMonth(delta) {
+  viewMonth += delta;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  render();
+}
+
+function isInViewMonth(dateStr) {
+  const d = new Date(dateStr);
+  return d.getMonth() === viewMonth && d.getFullYear() === viewYear;
+}
+
+function formatEUR(n) {
+  return '€' + n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function render() {
+  document.getElementById('monthLabel').textContent = `${MONTH_NAMES[viewMonth]} ${viewYear}`;
+
+  const entries = loadEntries();
+  const monthEntries = entries.filter(e => isInViewMonth(e.date));
+
+  const totalIncome = monthEntries.filter(e => e.type === 'income').reduce((s, e) => s + e.amount, 0);
+  const totalExpense = monthEntries.filter(e => e.type === 'expense').reduce((s, e) => s + e.amount, 0);
+
+  document.getElementById('totalIncome').textContent = formatEUR(totalIncome);
+  document.getElementById('totalExpense').textContent = formatEUR(totalExpense);
+  document.getElementById('netBalance').textContent = formatEUR(totalIncome - totalExpense);
+
+  const categories = ['Gym', 'Clothes', 'Beauty & Care', 'Food', 'Home / Household', 'Bills', 'Entertainment', 'Other'];
+  const catTotals = categories.map(cat => ({
+    cat,
+    amount: monthEntries.filter(e => e.type === 'expense' && e.category === cat).reduce((s, e) => s + e.amount, 0)
+  }));
+  const maxCat = Math.max(1, ...catTotals.map(c => c.amount));
+
+  const breakdownEl = document.getElementById('categoryBreakdown');
+  if (totalExpense === 0) {
+    breakdownEl.innerHTML = '<div class="empty-msg">No expenses this month yet</div>';
+  } else {
+    breakdownEl.innerHTML = catTotals.filter(c => c.amount > 0).map(c => `
+      <div class="cat-row">
+        <div class="cat-name">${c.cat}</div>
+        <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${(c.amount / maxCat * 100).toFixed(0)}%"></div></div>
+        <div class="cat-amount">${formatEUR(c.amount)}</div>
+      </div>
+    `).join('');
+  }
+
+  const listEl = document.getElementById('entriesList');
+  const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date) || b.id - a.id);
+  if (sorted.length === 0) {
+    listEl.innerHTML = '<div class="empty-msg">No entries yet — tap one of the buttons above</div>';
+  } else {
+    listEl.innerHTML = sorted.map(e => `
+      <div class="entry">
+        <div class="entry-left">
+          <span class="entry-icon">${e.type === 'income' ? '💰' : '💸'}</span>
+          <div>
+            <div class="entry-desc">${e.label}</div>
+            <div class="entry-date">${new Date(e.date).toLocaleDateString('en-GB')}</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div class="entry-amount ${e.type}">${e.type === 'income' ? '+' : '-'}${formatEUR(e.amount)}</div>
+          <button class="entry-delete" onclick="deleteEntry(${e.id})">🗑️</button>
+        </div>
+      </div>
+    `).join('');
+  }
+}
+
+render();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch((err) => console.error('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
