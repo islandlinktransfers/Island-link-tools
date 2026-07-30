@@ -219,7 +219,7 @@ input[type=file] { display: none; }
       </div>
 
       <div class="doc-zone-row">
-        <div class="zlabel"><input id="fZoneLabel" value="" size="18"/></div>
+        <div class="zlabel"><input id="fZoneLabel" value="" size="18" placeholder="π.χ. E-East; Gouves"/></div>
         <div class="dlabel"><span id="zoneRowLabel">DropOff Point:</span> <input id="fDropoffPoint" value="" size="26"/></div>
       </div>
 
@@ -323,9 +323,9 @@ function setDirection(dir) {
   if (isOutbound && startPoint.value.trim() === 'Airport HER') startPoint.value = '';
   if (!isOutbound && startPoint.value.trim() === '') startPoint.value = 'Airport HER';
 
-  // Zone label (far left, same row as DropOff/PickUp Point) is always left blank for
-  // Αναχώρηση — filled in by hand every time, never auto-filled or carried over.
-  if (isOutbound) document.getElementById('fZoneLabel').value = '';
+  // Zone label (far left, same row as DropOff/PickUp Point) is always left blank —
+  // filled in by hand every time, in both directions, never auto-filled or carried over.
+  document.getElementById('fZoneLabel').value = '';
 
   document.getElementById('dirBtnInbound').classList.toggle('active', !isOutbound);
   document.getElementById('dirBtnOutbound').classList.toggle('active', isOutbound);
@@ -377,17 +377,20 @@ function extractServiceSheetFields(text) {
   out.flightTimeRange = ftMatch ? `${ftMatch[1]} - ${ftMatch[2]}` : '';
   out.targetTime = grab(text, /Target\s*Time\s*:[ \t]*(\d{2}:\d{2})/i);
 
-  // Zone label + DropOff/PickUp Point often share one visual line, e.g. "E-East; Kokkini
+  // Zone label + DropOff/PickUp Point sometimes share one visual line, e.g. "E-East; Kokkini
   // Hani DropOff Point: Arina Beach Resort" (arrival) or "W-West; Heraklion PickUp Point:
-  // Aquila Atlantis Hotel [Hotel entrance]" (departure) — either label can appear.
+  // Aquila Atlantis Hotel [Hotel entrance]" (departure) — either label can appear. But a
+  // photo taken at an angle can make Google Vision read them as two separate lines instead
+  // (e.g. "E-East; Anissaras" on its own line, then several other lines, then "DropOff
+  // Point: Lyttos Mare" later) — so the zone label also gets its own standalone-line fallback.
   const pointLabelRe = /(?:Drop\s*[- ]?Off|Pick\s*[- ]?Up)\s*Point/i;
   const pointLineMatch = text.match(new RegExp(`^(.*?)(${pointLabelRe.source})\\s*:[ \\t]*([^\\n]+)$`, 'im'));
   if (pointLineMatch) {
     out.zoneLabel = pointLineMatch[1].replace(/[-:]\s*$/, '').trim();
     out.dropoffPoint = pointLineMatch[3].trim();
   } else {
-    out.zoneLabel = '';
     out.dropoffPoint = grab(text, new RegExp(`${pointLabelRe.source}\\s*:[ \\t]*([^\\n]+)`, 'i'));
+    out.zoneLabel = grab(text, /^[ \t]*([A-ZΑ-Ω]\s*-\s*(?:East|West|North|South|Ανατολικά|Δυτικά|Βόρεια|Νότια)\s*;[^\n]*)$/im);
   }
 
   // Outbound-only: PickUp Time (arrival sheets don't have this field at all)
@@ -457,9 +460,8 @@ async function scanAndGenerate() {
     document.getElementById('fFlightTimeRange').value = f.flightTimeRange;
     document.getElementById('fTargetTime').value = f.targetTime;
     document.getElementById('fPickupTime').value = f.pickupTime;
-    // Zone label stays blank for Αναχώρηση (fill it in by hand) — setDirection() already
-    // cleared it above; only Άφιξη gets it auto-filled from the photo.
-    if (transferDirection !== 'outbound') document.getElementById('fZoneLabel').value = f.zoneLabel;
+    // Zone label always stays blank — filled in by hand every time, in both directions;
+    // setDirection() already cleared it above, never auto-filled from the photo.
     document.getElementById('fDropoffPoint').value = f.dropoffPoint;
     document.getElementById('fGuestName').value = f.guestName;
     document.getElementById('fACI').value = f.aci;
