@@ -109,6 +109,18 @@ input[type=file] { display: none; }
 .doc-actions { display: flex; gap: 10px; margin-top: 20px; }
 .doc-actions .btn { margin-bottom: 0; }
 
+/* Άφιξη / Αναχώρηση toggle — switches Base/Leg, the DropOff/PickUp Point label, and
+   whether the outbound-only PickUp Time / departure flight time fields show up. */
+.direction-toggle { display: flex; gap: 8px; margin-bottom: 18px; }
+.direction-toggle button {
+  flex: 1; padding: 9px; border-radius: 8px; border: 1px solid #ccc; background: #f3f1e8;
+  font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: #555; cursor: pointer;
+}
+.direction-toggle button.active { background: #c9b97a; color: #1a1a1a; border-color: #c9b97a; }
+.doc-extra-row { display: none; justify-content: flex-end; gap: 18px; margin: -6px 0 10px; flex-wrap: wrap; }
+.doc-extra-row.visible { display: flex; }
+.doc-extra-row .doc-field { flex: 0 1 200px; border-bottom: 1px solid #e2e2e2; padding-bottom: 6px; margin-bottom: 0; }
+
 /* Print-only stand-ins for each <input>, created just before printing (see
    syncPrintValues() in the script). Inputs can't wrap long text onto a second line —
    the paper sheet does (e.g. "Carrier: MANOUSAKIS MARIN / FANOURIOS") — so on print we
@@ -117,7 +129,7 @@ input[type=file] { display: none; }
 
 @media print {
   body { background: #fff !important; padding: 0; }
-  .upload-area, #preview, .btn, #status, h1, .subtitle, .raw-toggle, #rawBox, .doc-actions { display: none !important; }
+  .upload-area, #preview, .btn, #status, h1, .subtitle, .raw-toggle, #rawBox, .doc-actions, .direction-toggle { display: none !important; }
   .doc { display: block !important; border: none; }
   .doc-zone-row input, .doc-pax-table input, .doc-field input, .doc-top .company input { display: none; }
   .print-value { display: inline; white-space: normal; word-break: break-word; font-family: Arial, Helvetica, sans-serif; color: #222; }
@@ -164,6 +176,11 @@ input[type=file] { display: none; }
         <div class="company"><input id="fCompany" value="STAR BUS, S.A." size="16"/></div>
       </div>
 
+      <div class="direction-toggle">
+        <button type="button" id="dirBtnInbound" class="active" onclick="setDirection('inbound')">✈️ Άφιξη (Inbound)</button>
+        <button type="button" id="dirBtnOutbound" onclick="setDirection('outbound')">🧳 Αναχώρηση (Outbound)</button>
+      </div>
+
       <div class="doc-cols">
         <div class="doc-col">
           <div class="doc-field"><span class="flabel">Grouping Id</span><input id="fGroupingId" value=""/></div>
@@ -196,9 +213,14 @@ input[type=file] { display: none; }
         </div>
       </div>
 
+      <div class="doc-extra-row" id="outboundExtraRow">
+        <div class="doc-field"><span class="flabel">PickUp Time</span><input id="fPickupTime" value=""/></div>
+        <div class="doc-field"><span class="flabel">Flight Time (Αναχώρησης)</span><input id="fDepFlightWindow" value=""/></div>
+      </div>
+
       <div class="doc-zone-row">
         <div class="zlabel"><input id="fZoneLabel" value="" size="18"/></div>
-        <div class="dlabel">DropOff Point: <input id="fDropoffPoint" value="" size="26"/></div>
+        <div class="dlabel"><span id="zoneRowLabel">DropOff Point:</span> <input id="fDropoffPoint" value="" size="26"/></div>
       </div>
 
       <table class="doc-pax-table">
@@ -282,6 +304,29 @@ function randomDistributorVoucher() {
   return 'AURM-' + String(n).padStart(7, '0');
 }
 
+// ---- Άφιξη (Inbound) / Αναχώρηση (Outbound) toggle. Switches Base/Leg, the DropOff/PickUp
+// Point label, and whether the outbound-only PickUp Time / departure flight-time fields are
+// shown — matching the two real layouts seen so far (arrival: pickup at the airport, drop at
+// the hotel; departure: pickup at the hotel, drop at the airport). ----
+let transferDirection = 'inbound';
+function setDirection(dir) {
+  transferDirection = dir;
+  const isOutbound = dir === 'outbound';
+
+  document.getElementById('fBaseLeg').value = isOutbound ? 'Outbound' : 'Inbound';
+  document.getElementById('zoneRowLabel').textContent = isOutbound ? 'PickUp Point:' : 'DropOff Point:';
+  document.getElementById('outboundExtraRow').classList.toggle('visible', isOutbound);
+
+  // Start Point flips meaning (airport vs hotel) — only touch it if it still holds the
+  // other direction's default, so a value you've already typed in isn't wiped out.
+  const startPoint = document.getElementById('fStartPoint');
+  if (isOutbound && startPoint.value.trim() === 'Airport HER') startPoint.value = '';
+  if (!isOutbound && startPoint.value.trim() === '') startPoint.value = 'Airport HER';
+
+  document.getElementById('dirBtnInbound').classList.toggle('active', !isOutbound);
+  document.getElementById('dirBtnOutbound').classList.toggle('active', isOutbound);
+}
+
 // ---- Extraction: reads a "Service Sheet - Transfer" style routing sheet and pulls out
 // the fields for the voucher. Grouping Id / Distributor-Voucher are NEVER read from the
 // photo — they're always freshly randomized below. Anything not found is left blank so
@@ -328,15 +373,21 @@ function extractServiceSheetFields(text) {
   out.flightTimeRange = ftMatch ? `${ftMatch[1]} - ${ftMatch[2]}` : '';
   out.targetTime = grab(text, /Target\s*Time\s*:[ \t]*(\d{2}:\d{2})/i);
 
-  // Zone label + DropOff Point often share one visual line: "E-East; Kokkini Hani DropOff Point: Arina Beach Resort"
-  const dropLineMatch = text.match(/^(.*?)Drop\s*[- ]?Off\s*Point\s*:[ \t]*([^\n]+)$/im);
-  if (dropLineMatch) {
-    out.zoneLabel = dropLineMatch[1].replace(/[-:]\s*$/, '').trim();
-    out.dropoffPoint = dropLineMatch[2].trim();
+  // Zone label + DropOff/PickUp Point often share one visual line, e.g. "E-East; Kokkini
+  // Hani DropOff Point: Arina Beach Resort" (arrival) or "W-West; Heraklion PickUp Point:
+  // Aquila Atlantis Hotel [Hotel entrance]" (departure) — either label can appear.
+  const pointLabelRe = /(?:Drop\s*[- ]?Off|Pick\s*[- ]?Up)\s*Point/i;
+  const pointLineMatch = text.match(new RegExp(`^(.*?)(${pointLabelRe.source})\\s*:[ \\t]*([^\\n]+)$`, 'im'));
+  if (pointLineMatch) {
+    out.zoneLabel = pointLineMatch[1].replace(/[-:]\s*$/, '').trim();
+    out.dropoffPoint = pointLineMatch[3].trim();
   } else {
     out.zoneLabel = '';
-    out.dropoffPoint = grab(text, /Drop\s*[- ]?Off\s*Point\s*:[ \t]*([^\n]+)/i);
+    out.dropoffPoint = grab(text, new RegExp(`${pointLabelRe.source}\\s*:[ \\t]*([^\\n]+)`, 'i'));
   }
+
+  // Outbound-only: PickUp Time (arrival sheets don't have this field at all)
+  out.pickupTime = grab(text, /Pick\s*[- ]?Up\s*Time\s*:[ \t]*(\d{2}:\d{2})/i);
 
   // Guest name — "Lastname, Firstname" style. Real sheets show this both ALL-CAPS
   // ("DANILA, IONUT") and mixed-case ("Krawiec, Oliwia Nikola"), so match either, as long
@@ -383,21 +434,29 @@ async function scanAndGenerate() {
 
     const f = extractServiceSheetFields(text);
 
+    // Detect Άφιξη/Αναχώρηση from Base/Leg before anything else — setDirection() sets
+    // fBaseLeg itself, flips the DropOff/PickUp Point label, and shows/hides the
+    // outbound-only fields, so nothing else here has to know which layout is active.
+    setDirection(/outbound/i.test(f.baseLeg || '') ? 'outbound' : 'inbound');
+
     document.getElementById('fDate').value = f.date;
     // Bus Guide, Driver, Carrier & Vehicle Type/Name stay fixed — never overwritten by OCR
     if (f.product) document.getElementById('fProduct').value = f.product;
-    if (f.baseLeg) document.getElementById('fBaseLeg').value = f.baseLeg;
     if (f.serviceUnits) document.getElementById('fServiceUnits').value = f.serviceUnits;
     if (f.startPoint) document.getElementById('fStartPoint').value = f.startPoint;
     document.getElementById('fZonesCode').value = f.zonesCode;
     document.getElementById('fStartTime').value = f.startTime;
     document.getElementById('fFlightTimeRange').value = f.flightTimeRange;
     document.getElementById('fTargetTime').value = f.targetTime;
+    document.getElementById('fPickupTime').value = f.pickupTime;
     document.getElementById('fZoneLabel').value = f.zoneLabel;
     document.getElementById('fDropoffPoint').value = f.dropoffPoint;
     document.getElementById('fGuestName').value = f.guestName;
     document.getElementById('fACI').value = f.aci;
     document.getElementById('fFlight').value = f.flight;
+    // Not reliably extractable by regex (no fixed label on the paper sheet) — always
+    // cleared here so a previous voucher's value can't carry over; fill it in by hand.
+    document.getElementById('fDepFlightWindow').value = '';
 
     // S-code mirrors the leading token of the vehicle type (e.g. "S0000 - Shared" -> "S0000")
     const vt = document.getElementById('fVehicleType').value || '';
@@ -425,6 +484,8 @@ function reRandomize() {
 // Opens a blank voucher you fill in yourself — no photo/OCR needed. Handy when you
 // already know the details, or want to add/change things the photo didn't have.
 function startManualVoucher() {
+  setDirection('inbound');
+  document.getElementById('fStartPoint').value = 'Airport HER';
   document.getElementById('fDate').value = '';
   document.getElementById('fBusGuide').value = '';
   document.getElementById('fDriver').value = '';
@@ -437,6 +498,8 @@ function startManualVoucher() {
   document.getElementById('fGuestName').value = '';
   document.getElementById('fACI').value = '';
   document.getElementById('fFlight').value = '';
+  document.getElementById('fPickupTime').value = '';
+  document.getElementById('fDepFlightWindow').value = '';
 
   document.getElementById('fGroupingId').value = randomGroupingId();
   document.getElementById('fDistributorVoucher').value = randomDistributorVoucher();
@@ -553,16 +616,29 @@ function downloadVoucherPDF() {
   const lineBY = rowBTop + rowBLines * LP - 0.74;
   doc.line(ML, lineBY, rightEdge, lineBY);
 
-  // Zone / DropOff — bold, size 9. Measured gap from Line B to this row: 48.04pt.
+  // Zone / DropOff (or PickUp, for Αναχώρηση/Outbound) — bold, size 9. Measured gap from
+  // Line B to this row: 48.04pt.
   const zoneTop = lineBY + 48.04;
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(9);
   doc.setTextColor(...black);
+  const zoneFieldLabel = transferDirection === 'outbound' ? 'PickUp Point' : 'DropOff Point';
   doc.text(val('fZoneLabel'), colX[0], zoneTop + 7.2);
-  doc.text(`DropOff Point: ${val('fDropoffPoint')}`, 228.346, zoneTop + 7.2);
+  // PickUp/DropOff Point text can run long (hotel name + detail like "[Hotel entrance]"),
+  // so it's wrapped to the available width rather than risking an overlap with anything
+  // drawn further right.
+  const zoneValueLines = doc.splitTextToSize(`${zoneFieldLabel}: ${val('fDropoffPoint')}`, rightEdge - 228.346);
+  zoneValueLines.forEach((line, i) => doc.text(line, 228.346, zoneTop + 7.2 + i * 11));
+  let zoneLines = Math.max(1, zoneValueLines.length);
+  // Outbound-only: PickUp Time, on its own line right below — not present on arrival sheets.
+  if (transferDirection === 'outbound' && val('fPickupTime')) {
+    doc.text(`PickUp Time: ${val('fPickupTime')}`, 228.346, zoneTop + 7.2 + zoneLines * 11);
+    zoneLines += 1;
+  }
 
-  // Line C — right after the Zone row (measured: 1.26pt gap).
-  const lineCY = zoneTop + 9 + 1.26;
+  // Line C — right after the Zone row (measured: 1.26pt gap on the single-line arrival
+  // case; extra PickUp Point wrap-lines or the outbound PickUp Time line push it down further).
+  const lineCY = zoneTop + 9 + 1.26 + (zoneLines - 1) * 11;
   doc.line(ML, lineCY, rightEdge, lineCY);
 
   // Passenger table — italic size-7 labels (measured: no header label over the S-code or
@@ -587,7 +663,9 @@ function downloadVoucherPDF() {
   doc.text(val('fGuestName'), paxColX[2], dataTop + 6.4);
   doc.text(val('fACI'), paxColX[3], dataTop + 6.4);
   doc.text(val('fFlight'), paxColX[4], dataTop + 6.4);
-  doc.text('-', 480.8, dataTop + 6.4); // static trailing placeholder — present in the reference PDF
+  // Trailing spot: static "-" on arrival sheets (confirmed from the reference PDF); on
+  // departure sheets this is where the departure flight's time window shows instead.
+  doc.text((transferDirection === 'outbound' && val('fDepFlightWindow')) || '-', 480.8, dataTop + 6.4);
 
   // Line D — below everything: the closing rule under the passenger data row (measured:
   // 21.16pt gap after a single-line data row; extra wrapped lines push it down further).
