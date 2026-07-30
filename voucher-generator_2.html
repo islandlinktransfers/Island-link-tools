@@ -391,7 +391,11 @@ function extractServiceSheetFields(text) {
   }
 
   // Outbound-only: PickUp Time (arrival sheets don't have this field at all)
-  out.pickupTime = grab(text, /Pick\s*[- ]?Up\s*Time\s*:[ \t]*(\d{2}:\d{2})/i);
+  // \s* (not [ \t]*) right after the colon here, on purpose: OCR sometimes breaks the line
+  // between "PickUp Time:" and the actual "HH:MM" value, and since the capture is anchored
+  // tightly to a time pattern, letting it cross one newline can't accidentally swallow
+  // unrelated text the way a generic [^\n]+ capture could.
+  out.pickupTime = grab(text, /Pick\s*[- ]?Up\s*Time\s*:\s*(\d{2}:\d{2})/i);
 
   // Guest name — "Lastname, Firstname" style. Real sheets show this both ALL-CAPS
   // ("DANILA, IONUT") and mixed-case ("Krawiec, Oliwia Nikola"), so match either, as long
