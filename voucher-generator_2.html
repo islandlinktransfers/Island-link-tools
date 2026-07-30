@@ -323,6 +323,10 @@ function setDirection(dir) {
   if (isOutbound && startPoint.value.trim() === 'Airport HER') startPoint.value = '';
   if (!isOutbound && startPoint.value.trim() === '') startPoint.value = 'Airport HER';
 
+  // Zone label (far left, same row as DropOff/PickUp Point) is always left blank for
+  // Αναχώρηση — filled in by hand every time, never auto-filled or carried over.
+  if (isOutbound) document.getElementById('fZoneLabel').value = '';
+
   document.getElementById('dirBtnInbound').classList.toggle('active', !isOutbound);
   document.getElementById('dirBtnOutbound').classList.toggle('active', isOutbound);
 }
@@ -449,7 +453,9 @@ async function scanAndGenerate() {
     document.getElementById('fFlightTimeRange').value = f.flightTimeRange;
     document.getElementById('fTargetTime').value = f.targetTime;
     document.getElementById('fPickupTime').value = f.pickupTime;
-    document.getElementById('fZoneLabel').value = f.zoneLabel;
+    // Zone label stays blank for Αναχώρηση (fill it in by hand) — setDirection() already
+    // cleared it above; only Άφιξη gets it auto-filled from the photo.
+    if (transferDirection !== 'outbound') document.getElementById('fZoneLabel').value = f.zoneLabel;
     document.getElementById('fDropoffPoint').value = f.dropoffPoint;
     document.getElementById('fGuestName').value = f.guestName;
     document.getElementById('fACI').value = f.aci;
@@ -624,20 +630,22 @@ function downloadVoucherPDF() {
   doc.setTextColor(...black);
   const zoneFieldLabel = transferDirection === 'outbound' ? 'PickUp Point' : 'DropOff Point';
   doc.text(val('fZoneLabel'), colX[0], zoneTop + 7.2);
-  // PickUp/DropOff Point text can run long (hotel name + detail like "[Hotel entrance]"),
-  // so it's wrapped to the available width rather than risking an overlap with anything
-  // drawn further right.
-  const zoneValueLines = doc.splitTextToSize(`${zoneFieldLabel}: ${val('fDropoffPoint')}`, rightEdge - 228.346);
+
+  // Outbound-only: PickUp Time sits flush at the far right of this same row. Its width is
+  // reserved first, so the PickUp/DropOff Point text (which can run long — hotel name plus
+  // a detail like "[Hotel entrance]") wraps before reaching it instead of overlapping.
+  const pickupTimeText = (transferDirection === 'outbound' && val('fPickupTime'))
+    ? `PickUp Time: ${val('fPickupTime')}` : '';
+  const pickupTimeWidth = pickupTimeText ? doc.getTextWidth(pickupTimeText) : 0;
+  const zoneValueWidth = rightEdge - 228.346 - (pickupTimeWidth ? pickupTimeWidth + 14 : 0);
+
+  const zoneValueLines = doc.splitTextToSize(`${zoneFieldLabel}: ${val('fDropoffPoint')}`, zoneValueWidth);
   zoneValueLines.forEach((line, i) => doc.text(line, 228.346, zoneTop + 7.2 + i * 11));
-  let zoneLines = Math.max(1, zoneValueLines.length);
-  // Outbound-only: PickUp Time, on its own line right below — not present on arrival sheets.
-  if (transferDirection === 'outbound' && val('fPickupTime')) {
-    doc.text(`PickUp Time: ${val('fPickupTime')}`, 228.346, zoneTop + 7.2 + zoneLines * 11);
-    zoneLines += 1;
-  }
+  const zoneLines = Math.max(1, zoneValueLines.length);
+  if (pickupTimeText) doc.text(pickupTimeText, rightEdge, zoneTop + 7.2, { align: 'right' });
 
   // Line C — right after the Zone row (measured: 1.26pt gap on the single-line arrival
-  // case; extra PickUp Point wrap-lines or the outbound PickUp Time line push it down further).
+  // case; extra PickUp/DropOff Point wrap-lines push it down further).
   const lineCY = zoneTop + 9 + 1.26 + (zoneLines - 1) * 11;
   doc.line(ML, lineCY, rightEdge, lineCY);
 
