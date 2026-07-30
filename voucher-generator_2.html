@@ -384,10 +384,7 @@ async function scanAndGenerate() {
     const f = extractServiceSheetFields(text);
 
     document.getElementById('fDate').value = f.date;
-    document.getElementById('fBusGuide').value = f.busGuide;
-    if (f.carrier) document.getElementById('fCarrier').value = f.carrier;
-    document.getElementById('fDriver').value = f.driver;
-    if (f.vehicleType) document.getElementById('fVehicleType').value = f.vehicleType;
+    // Bus Guide, Driver, Carrier & Vehicle Type/Name stay fixed — never overwritten by OCR
     if (f.product) document.getElementById('fProduct').value = f.product;
     if (f.baseLeg) document.getElementById('fBaseLeg').value = f.baseLeg;
     if (f.serviceUnits) document.getElementById('fServiceUnits').value = f.serviceUnits;
