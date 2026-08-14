@@ -14,7 +14,10 @@
 <meta name="apple-mobile-web-app-title" content="Voucher Scanner"/>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #f0ead8; min-height: 100vh; padding: 24px; }
+html { scrollbar-width: none; -ms-overflow-style: none; }
+html::-webkit-scrollbar { display: none; }
+body { font-family: 'Segoe UI', sans-serif; background: #1a1a1a; color: #f0ead8; min-height: 100vh; padding: 24px; scrollbar-width: none; -ms-overflow-style: none; }
+body::-webkit-scrollbar { display: none; }
 .container { max-width: 900px; margin: 0 auto; }
 h1 { font-size: 1.6rem; color: #c9b97a; margin-bottom: 8px; text-align: center; }
 .subtitle { text-align: center; color: #b0a98a; font-size: 0.9rem; margin-bottom: 32px; }
@@ -101,6 +104,7 @@ tr:hover td { background: #ffffff08; }
       <div class="field" style="grid-column:1/-1"><label>Group ID</label><input type="text" id="fGroupId" placeholder="—"/></div>
     </div>
     <div class="field-row">
+      <div class="field"><label>Ημερομηνία</label><input type="text" id="fDate" placeholder="—"/></div>
       <div class="field"><label>Ώρα</label><input type="text" id="fTime" placeholder="—"/></div>
     </div>
     <div class="field-row">
@@ -168,6 +172,7 @@ let currentFile = null;
 let currentFiles = [];
 let lastRawText = '';
 let currentType = '';
+let currentVoucherDate = '';
 let vouchers = [];
 
 function findPrice(text) {
@@ -310,7 +315,31 @@ async function scanVoucher() {
   }
 }
 
+function extractVoucherDate(text) {
+  // Tries the common date patterns seen across the different voucher formats
+  // (Date: 26.07.26 / 26/07/2026 / Ημερομηνία: 26-07-26 / a bare dd.mm.yy(yy) anywhere)
+  const patterns = [
+    /[Dd]ate[:\s]+(\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4})/,
+    /[Hh]μερομηνία[:\s]+(\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4})/,
+    /\b(\d{2}[.\/-]\d{2}[.\/-]\d{2,4})\b/
+  ];
+  for (const re of patterns) {
+    const m = text.match(re);
+    if (m) {
+      const parts = m[1].split(/[.\/-]/);
+      if (parts.length === 3) {
+        let [d, mo, y] = parts;
+        if (y.length === 2) y = '20' + y;
+        return `${d.padStart(2, '0')}/${mo.padStart(2, '0')}/${y}`;
+      }
+    }
+  }
+  return '';
+}
+
 function parseVoucher(text) {
+  currentVoucherDate = extractVoucherDate(text);
+  document.getElementById('fDate').value = currentVoucherDate;
 
   // ── TREND TOURISTIC FORMAT ──
   const isTrend = /Trend\s+Touristic/i.test(text) || /Transfer\s+Order\s+No[:\s]*\d+/i.test(text);
@@ -622,6 +651,7 @@ async function saveCurrentEntry() {
     xenodoxeio: document.getElementById('fHotel').value,
     timeMe: priceVat,
     timeXwris: priceNoVat,
+    voucherDate: document.getElementById('fDate').value,
   };
 
   await fetch(SHEETS_URL, {
