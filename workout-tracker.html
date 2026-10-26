@@ -131,7 +131,13 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
   background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
   margin-bottom: 12px; padding: 14px;
 }
-.history-session .h-date { font-family: 'Space Mono', monospace; color: var(--steel-light); font-size: 0.85rem; margin-bottom: 8px; }
+.history-session .h-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.history-session .h-date { font-family: 'Space Mono', monospace; color: var(--steel-light); font-size: 0.85rem; }
+.edit-session-btn {
+  background: none; border: 1px solid var(--steel); color: var(--steel-light); border-radius: 3px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.78rem;
+  padding: 5px 10px; cursor: pointer;
+}
 .history-ex { margin-bottom: 8px; }
 .history-ex .h-name { font-size: 1.1rem; font-weight: 600; }
 .history-ex .h-sets { font-family: 'Space Mono', monospace; color: var(--text-dim); font-size: 0.82rem; }
@@ -348,15 +354,23 @@ function finishWorkout() {
 }
 
 function renderHistory() {
-  const sessions = loadSessions().slice().reverse();
+  const sessions = loadSessions();
   const container = document.getElementById('historyList');
   if (sessions.length === 0) {
     container.innerHTML = '<div class="empty-state">No finished workouts yet.</div>';
     return;
   }
-  container.innerHTML = sessions.map(session => `
+  // Show newest first, but keep each session's real index into the stored array
+  // (editSession/removeSession need the real index, not the reversed display position).
+  const withIndex = sessions.map((session, idx) => ({ session, idx }));
+  const reversed = withIndex.slice().reverse();
+
+  container.innerHTML = reversed.map(({ session, idx }) => `
     <div class="history-session">
-      <div class="h-date">${session.date}</div>
+      <div class="h-top">
+        <div class="h-date">${session.date}</div>
+        <button class="edit-session-btn" onclick="editSession(${idx})">✎ Edit</button>
+      </div>
       ${session.exercises.map(ex => `
         <div class="history-ex">
           <div class="h-name">${ex.name}</div>
@@ -365,6 +379,37 @@ function renderHistory() {
       `).join('')}
     </div>
   `).join('');
+}
+
+function editSession(originalIndex) {
+  const sessions = loadSessions();
+  const session = sessions[originalIndex];
+  if (!session) return;
+
+  // If there's already unsaved work in today's draft, make sure the user doesn't lose it silently.
+  const draftHasData = draft.exercises.some(ex => ex.sets.some(s => s.kg !== '' || s.reps !== ''));
+  if (draftHasData) {
+    const ok = confirm('This will replace what\'s currently in Today with this finished workout so you can edit it. Continue?');
+    if (!ok) return;
+  }
+
+  // Pull the session back out of history...
+  sessions.splice(originalIndex, 1);
+  saveSessions(sessions);
+
+  // ...and load it into today's editable draft, re-dating it to today so it behaves like a normal in-progress workout.
+  draft = {
+    date: todayStr(),
+    exercises: session.exercises.map(ex => ({
+      name: ex.name,
+      sets: ex.sets.map(s => ({ kg: s.kg, reps: s.reps }))
+    }))
+  };
+  saveDraft(draft);
+
+  renderLog();
+  renderHistory();
+  switchTab('log');
 }
 
 function buildProgressData() {
