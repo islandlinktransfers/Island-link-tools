@@ -4,7 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Workout Log</title>
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Barlow+Condensed:wght@500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet"/>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 :root {
@@ -17,6 +17,7 @@
   --text-dim: #8a8a86;
   --rust: #c9534a;
   --line: #2e2e2e;
+  --photo-red: #e5393b;
 }
 html { scrollbar-width: none; -ms-overflow-style: none; }
 html::-webkit-scrollbar { display: none; }
@@ -41,8 +42,8 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 }
 .tab.active { color: var(--steel-light); border-bottom-color: var(--steel); }
 
-#log, #history, #progress { padding: 16px; }
-#history, #progress { display: none; }
+#log, #history, #progress, #photo { padding: 16px; }
+#history, #progress, #photo { display: none; }
 
 .progress-card {
   background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
@@ -141,6 +142,43 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 .history-ex { margin-bottom: 8px; }
 .history-ex .h-name { font-size: 1.1rem; font-weight: 600; }
 .history-ex .h-sets { font-family: 'Space Mono', monospace; color: var(--text-dim); font-size: 0.82rem; }
+
+/* Photo tab */
+.photo-field { margin-bottom: 14px; }
+.photo-field label {
+  display: block; font-size: 0.85rem; color: var(--text-dim); margin-bottom: 6px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 600; letter-spacing: 0.02em;
+}
+.photo-field input[type="text"], .photo-field input[type="number"] {
+  width: 100%; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  color: var(--text); font-family: 'Space Mono', monospace; font-size: 1.05rem;
+  padding: 11px 12px;
+}
+.photo-field input:focus { outline: none; border-color: var(--photo-red); }
+
+.photo-upload-btn {
+  display: block; width: 100%; text-align: center; padding: 16px;
+  background: var(--panel); border: 1.5px dashed var(--line); border-radius: 6px;
+  color: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-weight: 600;
+  font-size: 1.05rem; cursor: pointer; margin-bottom: 16px;
+}
+.photo-upload-btn.has-image { border-style: solid; border-color: var(--photo-red); color: var(--text); }
+#photoFileInput { display: none; }
+
+#photoCanvasWrap {
+  display: none; margin-bottom: 16px; border-radius: 6px; overflow: hidden;
+  border: 1px solid var(--line); background: #000;
+}
+#photoCanvas { display: block; width: 100%; height: auto; }
+
+.photo-actions { display: none; gap: 10px; margin-bottom: 20px; }
+.photo-actions button {
+  flex: 1; padding: 13px; border: none; border-radius: 4px;
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1rem; cursor: pointer;
+}
+#photoGenerateBtn { background: var(--photo-red); color: #fff; }
+#photoSaveBtn { background: var(--steel); color: #0d0d0d; }
+.photo-hint { font-size: 0.8rem; color: var(--text-dim); text-align: center; margin-top: -8px; margin-bottom: 16px; display: none; }
 </style>
 </head>
 <body>
@@ -154,6 +192,7 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
   <button class="tab active" id="tabLog" onclick="switchTab('log')">Today</button>
   <button class="tab" id="tabHistory" onclick="switchTab('history')">History</button>
   <button class="tab" id="tabProgress" onclick="switchTab('progress')">Progress</button>
+  <button class="tab" id="tabPhoto" onclick="switchTab('photo')">Photo</button>
 </div>
 
 <div id="log">
@@ -172,6 +211,31 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 
 <div id="progress">
   <div id="progressList"></div>
+</div>
+
+<div id="photo">
+  <label class="photo-upload-btn" id="photoUploadLabel" for="photoFileInput">📷 Επίλεξε φωτογραφία</label>
+  <input type="file" id="photoFileInput" accept="image/*" onchange="onPhotoSelected(event)"/>
+
+  <div class="photo-field">
+    <label for="photoDay">Μέρα</label>
+    <input type="text" id="photoDay" placeholder="DAY 1"/>
+  </div>
+  <div class="photo-field">
+    <label for="photoWeight">Κιλά</label>
+    <input type="number" inputmode="decimal" id="photoWeight" placeholder="π.χ. 110.8"/>
+  </div>
+
+  <div class="photo-actions" id="photoActionsPre" style="display:none;">
+    <button id="photoGenerateBtn" onclick="generatePhotoOverlay()">Δημιούργησε</button>
+  </div>
+
+  <div id="photoCanvasWrap"><canvas id="photoCanvas"></canvas></div>
+  <div class="photo-hint" id="photoSaveHint">Πάτα κρατημένο πάνω στη φωτό για να την αποθηκεύσεις, ή χρησιμοποίησε το κουμπί.</div>
+
+  <div class="photo-actions" id="photoActionsPost">
+    <button id="photoSaveBtn" onclick="savePhotoToDevice()">💾 Αποθήκευση στη συσκευή</button>
+  </div>
 </div>
 
 <div class="finish-bar">
@@ -480,10 +544,164 @@ function switchTab(tab) {
   document.getElementById('log').style.display = tab === 'log' ? 'block' : 'none';
   document.getElementById('history').style.display = tab === 'history' ? 'block' : 'none';
   document.getElementById('progress').style.display = tab === 'progress' ? 'block' : 'none';
+  document.getElementById('photo').style.display = tab === 'photo' ? 'block' : 'none';
   document.getElementById('tabLog').classList.toggle('active', tab === 'log');
   document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
   document.getElementById('tabProgress').classList.toggle('active', tab === 'progress');
+  document.getElementById('tabPhoto').classList.toggle('active', tab === 'photo');
   if (tab === 'progress') renderProgress();
+  if (tab === 'photo') initPhotoTab();
+}
+
+/* ---------- Progress Photo tab ---------- */
+const PHOTO_COUNT_KEY = 'workoutLog_photoCount';
+const PHOTO_LAST_WEIGHT_KEY = 'workoutLog_photoLastWeight';
+let selectedPhotoImg = null; // HTMLImageElement of the chosen source photo
+
+function todayLabelDots() {
+  const d = new Date();
+  return `${String(d.getDate()).padStart(2,'0')}.${String(d.getMonth()+1).padStart(2,'0')}.${d.getFullYear()}`;
+}
+
+function initPhotoTab() {
+  // Suggest the next day number and prefill last weight, without overwriting what the user already typed.
+  const dayInput = document.getElementById('photoDay');
+  if (!dayInput.value) {
+    const count = parseInt(localStorage.getItem(PHOTO_COUNT_KEY) || '0', 10);
+    dayInput.value = `DAY ${count + 1}`;
+  }
+  const weightInput = document.getElementById('photoWeight');
+  if (!weightInput.value) {
+    const lastWeight = localStorage.getItem(PHOTO_LAST_WEIGHT_KEY);
+    if (lastWeight) weightInput.value = lastWeight;
+  }
+}
+
+function onPhotoSelected(event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      selectedPhotoImg = img;
+      document.getElementById('photoUploadLabel').textContent = '📷 ' + file.name;
+      document.getElementById('photoUploadLabel').classList.add('has-image');
+      document.getElementById('photoActionsPre').style.display = 'flex';
+      // hide any previous render until regenerated
+      document.getElementById('photoCanvasWrap').style.display = 'none';
+      document.getElementById('photoActionsPost').style.display = 'none';
+      document.getElementById('photoSaveHint').style.display = 'none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function generatePhotoOverlay() {
+  if (!selectedPhotoImg) return;
+  const dayLabel = (document.getElementById('photoDay').value || 'DAY 1').trim().toUpperCase();
+  const weightVal = document.getElementById('photoWeight').value.trim();
+  const weightText = weightVal || '--';
+  const dateText = todayLabelDots();
+
+  const img = selectedPhotoImg;
+  const canvas = document.getElementById('photoCanvas');
+  const W = img.naturalWidth, H = img.naturalHeight;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, W, H);
+
+  // Bottom gradient for legibility
+  const gradH = H * 0.30;
+  const gradient = ctx.createLinearGradient(0, H - gradH, 0, H);
+  gradient.addColorStop(0, 'rgba(8,4,4,0)');
+  gradient.addColorStop(1, 'rgba(8,4,4,0.92)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, H - gradH, W, gradH);
+
+  const margin = W * 0.046;
+  const redColor = '#e5393b';
+
+  // DAY label with letter spacing
+  const labelFontSize = Math.round(H * 0.0198);
+  ctx.font = `700 ${labelFontSize}px 'Poppins', sans-serif`;
+  ctx.fillStyle = redColor;
+  ctx.textBaseline = 'alphabetic';
+  const labelY = H - H * 0.164;
+  let lx = margin;
+  const spacedLabel = dayLabel.split('').join(' ');
+  for (const ch of spacedLabel) {
+    ctx.fillText(ch, lx, labelY);
+    lx += ctx.measureText(ch).width + labelFontSize * 0.28;
+  }
+  const labelWidth = lx - margin - labelFontSize * 0.28;
+  ctx.fillRect(margin, labelY + labelFontSize * 0.22, labelWidth, Math.max(2, H * 0.002));
+
+  // Big weight number
+  const numFontSize = Math.round(H * 0.0745);
+  ctx.font = `800 ${numFontSize}px 'Poppins', sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  const numY = H - H * 0.055;
+  ctx.fillText(weightText, margin, numY);
+  const numWidth = ctx.measureText(weightText).width;
+
+  // kg unit
+  const unitFontSize = Math.round(H * 0.0228);
+  ctx.font = `700 ${unitFontSize}px 'Poppins', sans-serif`;
+  ctx.fillStyle = redColor;
+  ctx.fillText('kg', margin + numWidth + numFontSize * 0.09, numY);
+
+  // date bottom right
+  const dateFontSize = Math.round(H * 0.0149);
+  ctx.font = `600 ${dateFontSize}px 'Poppins', sans-serif`;
+  ctx.fillStyle = '#bebebe';
+  const dateWidth = ctx.measureText(dateText).width;
+  ctx.fillText(dateText, W - margin - dateWidth, H - H * 0.03);
+
+  document.getElementById('photoCanvasWrap').style.display = 'block';
+  document.getElementById('photoActionsPost').style.display = 'flex';
+  document.getElementById('photoSaveHint').style.display = 'block';
+
+  if (weightVal) localStorage.setItem(PHOTO_LAST_WEIGHT_KEY, weightVal);
+}
+
+function savePhotoToDevice() {
+  const canvas = document.getElementById('photoCanvas');
+  const dayLabel = (document.getElementById('photoDay').value || 'day').trim().toLowerCase().replace(/\s+/g, '-');
+  const filename = `progress-${dayLabel}.jpg`;
+
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    const file = new File([blob], filename, { type: 'image/jpeg' });
+
+    // Prefer the native share sheet on mobile, which includes "Save Image".
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file] });
+        bumpPhotoCount();
+        return;
+      } catch (err) {
+        // user cancelled share or it failed - fall through to direct download
+      }
+    }
+
+    // Fallback: trigger a direct download.
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    bumpPhotoCount();
+  }, 'image/jpeg', 0.92);
+}
+
+function bumpPhotoCount() {
+  const count = parseInt(localStorage.getItem(PHOTO_COUNT_KEY) || '0', 10);
+  localStorage.setItem(PHOTO_COUNT_KEY, String(count + 1));
 }
 
 renderDayButtons();
