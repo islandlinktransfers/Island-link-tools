@@ -60,6 +60,27 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
   font-size: 0.68rem; color: var(--text-dim); margin-top: 4px;
 }
 
+.heatmap-card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  margin-bottom: 14px; padding: 14px;
+}
+.heatmap-year { margin-bottom: 14px; }
+.heatmap-year:last-of-type { margin-bottom: 8px; }
+.heatmap-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+.heatmap-head .hm-year { font-size: 1.5rem; font-weight: 700; }
+.heatmap-head .hm-count { font-family: 'Space Mono', monospace; font-size: 0.75rem; color: var(--text-dim); }
+.heatmap-year svg { width: 100%; height: auto; display: block; }
+.hm-on { fill: var(--steel-light); }
+.hm-off { fill: #2a2a2a; }
+.hm-future { fill: #1e1e1e; }
+.hm-month { fill: var(--text-dim); font-family: 'Barlow Condensed', sans-serif; font-size: 13px; }
+.heatmap-legend {
+  display: flex; gap: 16px; justify-content: flex-end; font-size: 0.85rem; color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif;
+}
+.heatmap-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.heatmap-legend i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
 .day-buttons {
   display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px;
 }
@@ -210,6 +231,7 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 </div>
 
 <div id="progress">
+  <div id="heatmapWrap"></div>
   <div id="progressList"></div>
 </div>
 
@@ -514,7 +536,72 @@ function lineChartSVG(points) {
   </svg>`;
 }
 
+/* ---------- Workout calendar (heatmap) ---------- */
+function parseSessionDate(str) {
+  const [d, m, y] = String(str).split('/').map(Number);
+  return new Date(y, m - 1, d);
+}
+function dayKey(dt) { return `${dt.getFullYear()}-${dt.getMonth() + 1}-${dt.getDate()}`; }
+
+function renderHeatmap() {
+  const wrap = document.getElementById('heatmapWrap');
+  const workoutDays = new Set();
+  const now = new Date();
+  const years = new Set([now.getFullYear()]);
+
+  loadSessions().forEach(s => {
+    const dt = parseSessionDate(s.date);
+    if (!isNaN(dt)) { workoutDays.add(dayKey(dt)); years.add(dt.getFullYear()); }
+  });
+  // an unfinished workout with data in it still counts for today
+  if (draft.exercises.some(ex => ex.sets.some(s => s.kg !== '' && s.reps !== ''))) {
+    const dt = parseSessionDate(draft.date);
+    if (!isNaN(dt)) workoutDays.add(dayKey(dt));
+  }
+
+  const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const step = 11, size = 8.5, labelH = 16;
+  const todayKey = dayKey(now);
+  const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const yearsHtml = [...years].sort((a, b) => b - a).map(year => {
+    const offset = (new Date(year, 0, 1).getDay() + 6) % 7; // Monday = row 0
+    const total = Math.round((new Date(year, 11, 31) - new Date(year, 0, 1)) / 86400000) + 1;
+    const cols = Math.floor((offset + total - 1) / 7) + 1;
+    let cells = '', labels = '', count = 0;
+
+    for (let i = 0; i < total; i++) {
+      const dt = new Date(year, 0, 1 + i);
+      const idx = offset + i, col = Math.floor(idx / 7), row = idx % 7;
+      const x = col * step, y = labelH + row * step;
+      const key = dayKey(dt);
+      const on = workoutDays.has(key);
+      if (on) count++;
+      const cls = on ? 'hm-on' : (dt > todayMid ? 'hm-future' : 'hm-off');
+      const outline = key === todayKey ? ' stroke="#e8e8e4" stroke-width="1"' : '';
+      cells += `<rect class="${cls}" x="${x}" y="${y}" width="${size}" height="${size}" rx="2"${outline}/>`;
+      if (dt.getDate() === 1) labels += `<text class="hm-month" x="${x}" y="11">${monthNames[dt.getMonth()]}</text>`;
+    }
+
+    return `
+      <div class="heatmap-year">
+        <div class="heatmap-head"><span class="hm-year">${year}</span><span class="hm-count">${count} workouts</span></div>
+        <svg viewBox="0 0 ${cols * step} ${labelH + 7 * step}">${labels}${cells}</svg>
+      </div>`;
+  }).join('');
+
+  wrap.innerHTML = `
+    <div class="heatmap-card">
+      ${yearsHtml}
+      <div class="heatmap-legend">
+        <span><i style="background:#2a2a2a"></i>Rest days</span>
+        <span><i style="background:var(--steel-light)"></i>Workout days</span>
+      </div>
+    </div>`;
+}
+
 function renderProgress() {
+  renderHeatmap();
   const data = buildProgressData();
   const container = document.getElementById('progressList');
 
