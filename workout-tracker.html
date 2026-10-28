@@ -381,15 +381,16 @@ const DAY_PLAN = [
     ['Overhead Triceps Extension', '3×10-12'], ['Triceps Pushdown', '3×12-15'] ] },
   { label: 'Day 2 — Pull', ex: [
     ['Wide-Grip Pull-ups', '4×6-10'], ['Barbell Row', '3×8-10'], ['Face Pull', '3×15'],
-    ['Barbell Shrugs', '2×12-15'], ['Incline DB Curl', '4×10-12'], ['Hammer Curl', '3×12-15'] ] },
+    ['Barbell Shrugs', '4×10-12'], ['Incline DB Curl', '4×10-12'], ['Hammer Curl', '3×12-15'],
+    ['Reverse Curl', '2×12-15'], ['Neck Curl', '2×15'] ] },
   { label: 'Day 3 — Legs (Glutes)', ex: [
     ['Barbell Hip Thrust', '4×8-10'], ['Back Squat', '4×6-8'], ['Romanian Deadlift', '3×8-10'],
     ['Leg Curl', '3×12-15'], ['Calf Raise', '3×12-15'], ['Hanging Leg Raise', '3×12-15'], ['Cable Crunch', '3×15-20'] ] },
   { label: 'Day 4 — Upper', ex: [
     ['Incline Bench Press', '3×8-10'], ['Seated Cable Row', '3×8-10'], ['Chest Dips', '3×10-12'],
-    ['Lat Pulldown', '3×10-12'], ['Rear Delt Fly', '3×15-20'], ['Close-Grip Bench Press', '3×8-10'], ['EZ-Bar Curl', '3×8-10'] ] },
+    ['Lat Pulldown', '3×10-12'], ['Lateral Raise', '3×12-15'], ['Rear Delt Fly', '3×15-20'], ['Close-Grip Bench Press', '3×8-10'], ['EZ-Bar Curl', '3×8-10'] ] },
   { label: 'Day 5 — Lower', ex: [
-    ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'],
+    ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'], ['Leg Extension', '3×12-15'], ['Cable Hip Abduction', '3×15/leg'],
     ['Weighted Back Extension', '3×12-15'], ['Standing Calf Raise', '4×15-20'],
     ['Ab Wheel Rollout', '3×12-15'], ['Cable Woodchopper', '3×12-15/side'] ] }
 ];
@@ -1010,12 +1011,12 @@ function toggleRestAuto() {
 const REST_BY_NAME = {
   'incline db press':150,'flat bench press':180,'cable fly':75,'overhead press':150,'lateral raise':60,
   'overhead triceps extension':75,'triceps pushdown':60,
-  'wide-grip pull-ups':150,'barbell row':150,'face pull':60,'barbell shrugs':75,'incline db curl':75,'hammer curl':60,
+  'wide-grip pull-ups':150,'barbell row':150,'face pull':60,'barbell shrugs':90,'incline db curl':75,'hammer curl':60,
   'barbell hip thrust':150,'back squat':180,'romanian deadlift':150,'leg curl':75,'calf raise':60,
   'hanging leg raise':75,'cable crunch':60,
   'incline bench press':150,'seated cable row':120,'chest dips':120,'lat pulldown':120,'rear delt fly':60,
   'close-grip bench press':120,'ez-bar curl':75,
-  'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'weighted back extension':90,
+  'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'reverse curl':60,'neck curl':60,'cable hip abduction':60,'leg extension':75,'weighted back extension':90,
   'standing calf raise':60,'ab wheel rollout':75,'cable woodchopper':60
 };
 function restSecondsFor(name) { return REST_BY_NAME[name.toLowerCase()] || 90; }
@@ -1162,7 +1163,7 @@ function importBackup(event) {
 /* ---------- Weekly volume per muscle ---------- */
 const MUSCLES = [
   ['chest', 'Chest', true], ['back', 'Back', false], ['shoulders', 'Shoulders', false],
-  ['biceps', 'Biceps', false], ['triceps', 'Triceps', false], ['quads', 'Quads', false],
+  ['biceps', 'Biceps', false], ['forearms', 'Forearms', false], ['triceps', 'Triceps', false], ['quads', 'Quads', false],
   ['hamstrings', 'Hamstrings', false], ['glutes', 'Glutes', true], ['calves', 'Calves', false], ['abs', 'Abs', true]
 ];
 const MUSCLE_MAP = {
@@ -1184,7 +1185,9 @@ const MUSCLE_MAP = {
   'lat pulldown': { back: 1, biceps: 0.5 },
   'barbell shrugs': { back: 1 },
   'incline db curl': { biceps: 1 },
-  'hammer curl': { biceps: 1 },
+  'hammer curl': { biceps: 1, forearms: 0.5 },
+  'reverse curl': { forearms: 1, biceps: 0.5 },
+  'cable hip abduction': { glutes: 1 },
   'ez-bar curl': { biceps: 1 },
   'barbell hip thrust': { glutes: 1 },
   'back squat': { quads: 1, glutes: 0.5 },
@@ -1195,6 +1198,7 @@ const MUSCLE_MAP = {
   'bulgarian split squat': { quads: 1, glutes: 0.5 },
   'cable pull-through': { glutes: 1, hamstrings: 0.5 },
   'leg press': { quads: 1, glutes: 0.5 },
+  'leg extension': { quads: 1 },
   'weighted back extension': { glutes: 0.5, hamstrings: 0.5 },
   'hanging leg raise': { abs: 1 },
   'cable crunch': { abs: 1 },
