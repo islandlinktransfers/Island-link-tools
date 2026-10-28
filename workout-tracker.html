@@ -257,6 +257,11 @@ body.rest-on { padding-bottom: 150px; }
 #cmpCanvas { display: block; width: 100%; height: auto; }
 #cmpGenerateBtn { background: var(--photo-red); color: #fff; }
 #cmpSaveBtn { background: var(--steel); color: #0d0d0d; }
+.head-btns { display: flex; align-items: center; gap: 8px; }
+.rest-start {
+  background: var(--panel2); border: 1px solid var(--steel); border-radius: 4px; color: var(--steel-light);
+  font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.85rem; padding: 7px 10px; cursor: pointer;
+}
 </style>
 </head>
 <body>
@@ -276,7 +281,7 @@ body.rest-on { padding-bottom: 150px; }
 <div id="log">
   <div class="day-buttons" id="dayButtons"></div>
   <div class="log-tools">
-    <button id="restToggle" onclick="toggleRestAuto()">⏱ Rest timer: ON</button>
+    <button id="restToggle" onclick="toggleRestAuto()">⏱ Auto-start: OFF</button>
     <span class="hint">🏆 new record · ↑ better than last time</span>
   </div>
   <div id="exerciseList"></div>
@@ -546,7 +551,10 @@ function renderLog() {
             ${target ? `<div class="target-line">Target ${esc(target)}</div>` : ''}
             ${lastTime ? `<div class="last-time">Last: ${lastTime}</div>` : ''}
           </div>
-          <button class="remove-ex" onclick="removeExercise(${exIdx})">✕</button>
+          <div class="head-btns">
+            <button class="rest-start" onclick="startRest(${restSecondsFor(ex.name)})">⏱ ${fmtClock(restSecondsFor(ex.name))}</button>
+            <button class="remove-ex" onclick="removeExercise(${exIdx})">✕</button>
+          </div>
         </div>
         ${setsHtml}
         <button class="add-set-btn" onclick="addSet(${exIdx})">+ Add set</button>
@@ -988,9 +996,9 @@ function setMarker(name, setIdx, kgStr, repsStr) {
 const REST_KEY = 'workoutLog_restAuto';
 let restEnd = 0, restTimer = null, restAudio = null, restToken = 0;
 
-function restAutoOn() { return localStorage.getItem(REST_KEY) !== 'off'; }
+function restAutoOn() { return localStorage.getItem(REST_KEY) === 'on'; }
 function renderRestToggle() {
-  document.getElementById('restToggle').textContent = '⏱ Rest timer: ' + (restAutoOn() ? 'ON' : 'OFF');
+  document.getElementById('restToggle').textContent = '⏱ Auto-start: ' + (restAutoOn() ? 'ON' : 'OFF');
 }
 function toggleRestAuto() {
   localStorage.setItem(REST_KEY, restAutoOn() ? 'off' : 'on');
@@ -999,15 +1007,18 @@ function toggleRestAuto() {
 }
 
 // Heavier / lower-rep work gets longer rest, same idea as the plan: compounds 2-3 min, isolation ~1 min.
-function restSecondsFor(name) {
-  const p = parseTarget(TARGET_BY_NAME[name.toLowerCase()]);
-  if (!p) return 90;
-  if (p.repsHi <= 8) return 150;
-  if (p.repsHi <= 10) return 120;
-  if (p.repsHi <= 12) return 90;
-  if (p.repsHi <= 15) return 75;
-  return 60;
-}
+const REST_BY_NAME = {
+  'incline db press':150,'flat bench press':180,'cable fly':75,'overhead press':150,'lateral raise':60,
+  'overhead triceps extension':75,'triceps pushdown':60,
+  'wide-grip pull-ups':150,'barbell row':150,'face pull':60,'barbell shrugs':75,'incline db curl':75,'hammer curl':60,
+  'barbell hip thrust':150,'back squat':180,'romanian deadlift':150,'leg curl':75,'calf raise':60,
+  'hanging leg raise':75,'cable crunch':60,
+  'incline bench press':150,'seated cable row':120,'chest dips':120,'lat pulldown':120,'rear delt fly':60,
+  'close-grip bench press':120,'ez-bar curl':75,
+  'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'weighted back extension':90,
+  'standing calf raise':60,'ab wheel rollout':75,'cable woodchopper':60
+};
+function restSecondsFor(name) { return REST_BY_NAME[name.toLowerCase()] || 90; }
 
 function fmtClock(sec) { return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }
 
