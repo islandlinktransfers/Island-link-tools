@@ -429,12 +429,20 @@ if (draft.date !== todayStr()) {
 
 document.getElementById('todayLabel').textContent = todayStr();
 
+// Bodyweight exercises: reps only is enough (kg stays 0 unless you add weight).
+const BW_NAMES = ['hanging leg raise', 'ab wheel rollout', 'wide-grip pull-ups', 'chest dips'];
+function isBW(name) { return BW_NAMES.includes(String(name).toLowerCase()); }
+function fmtSet(name, s) {
+  const kg = parseFloat(s.kg) || 0;
+  return (isBW(name) && kg === 0) ? `BW×${s.reps}` : `${s.kg}kg×${s.reps}`;
+}
+
 function findLastTime(exerciseName) {
   const sessions = loadSessions();
   for (let i = sessions.length - 1; i >= 0; i--) {
     const match = sessions[i].exercises.find(ex => ex.name.toLowerCase() === exerciseName.toLowerCase());
     if (match && match.sets.length) {
-      return match.sets.map(s => `${s.kg}kg×${s.reps}`).join(', ');
+      return match.sets.map(s => fmtSet(match.name, s)).join(', ');
     }
   }
   return null;
@@ -496,6 +504,7 @@ function updateSet(exIdx, setIdx, field, value) {
   const set = ex.sets[setIdx];
   const wasComplete = set.kg !== '' && set.reps !== '';
   set[field] = value;
+  if (field === 'reps' && value !== '' && set.kg === '' && isBW(ex.name)) set.kg = '0';
   saveDraft(draft);
   updateFinishButton();
 
@@ -525,7 +534,7 @@ function renderLog() {
     const target = TARGET_BY_NAME[ex.name.toLowerCase()];
     const setsHtml = ex.sets.map((s, setIdx) => {
       const ls = lastSets[setIdx];
-      const phKg = ls ? ls.kg : 0, phReps = ls ? ls.reps : 0;
+      const phKg = isBW(ex.name) ? ((ls && parseFloat(ls.kg) > 0) ? ls.kg : 'BW') : (ls ? ls.kg : 0), phReps = ls ? ls.reps : 0;
       return `
       <div class="set-row">
         <span class="set-num">${setIdx + 1}</span>
@@ -605,7 +614,7 @@ function renderHistory() {
       ${session.exercises.map(ex => `
         <div class="history-ex">
           <div class="h-name">${ex.name}</div>
-          <div class="h-sets">${ex.sets.map(s => `${s.kg}kg×${s.reps}`).join(', ')}</div>
+          <div class="h-sets">${ex.sets.map(s => fmtSet(ex.name, s)).join(', ')}</div>
         </div>
       `).join('')}
     </div>
@@ -653,7 +662,9 @@ function buildProgressData() {
       const topSet = ex.sets.reduce((best, s) => (parseFloat(s.kg) || 0) >= maxKg ? s : best, ex.sets[0]);
       const key = ex.name.toLowerCase();
       if (!byExercise[key]) byExercise[key] = { name: ex.name, points: [] };
-      byExercise[key].points.push({ date: session.date, kg: maxKg, reps: topSet.reps });
+      const bw = maxKg === 0 && isBW(ex.name);
+      if (bw) { byExercise[key].bw = true; }
+      byExercise[key].points.push({ date: session.date, kg: bw ? Math.max(...ex.sets.map(s => parseInt(s.reps, 10) || 0)) : maxKg, reps: topSet.reps });
     });
   });
 
@@ -760,12 +771,13 @@ function renderProgress() {
     const first = ex.points[0], last = ex.points[ex.points.length - 1];
     const diff = last.kg - first.kg;
     const changeClass = diff > 0 ? '' : 'flat';
-    const changeText = diff > 0 ? `+${diff}kg since first logged` : (diff < 0 ? `${diff}kg since first logged` : 'No change yet');
+    const u = ex.bw ? ' reps' : 'kg';
+    const changeText = diff > 0 ? `+${diff}${u} since first logged` : (diff < 0 ? `${diff}${u} since first logged` : 'No change yet');
 
     return `
       <div class="progress-card">
         <div class="p-name">${ex.name}</div>
-        <div class="p-change ${changeClass}">${first.kg}kg → ${last.kg}kg (${changeText})</div>
+        <div class="p-change ${changeClass}">${first.kg}${u} → ${last.kg}${u} (${changeText})</div>
         ${lineChartSVG(ex.points)}
         <div class="p-points"><span>${first.date}</span><span>${last.date}</span></div>
       </div>
@@ -975,7 +987,7 @@ function findLastSets(name) {
 // 🏆 = heavier than ever (or same weight, more reps); ↑ = better than the same set last time.
 function setMarker(name, setIdx, kgStr, repsStr) {
   const kg = parseFloat(kgStr), reps = parseInt(repsStr, 10);
-  if (!(kg > 0) || !(reps > 0)) return '';
+  if (!(isBW(name) ? kg >= 0 : kg > 0) || !(reps > 0)) return '';
   const hist = exerciseHistory(name);
   if (!hist.length) return '';
 
