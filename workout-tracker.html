@@ -105,7 +105,7 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 .remove-ex { background: none; border: none; color: var(--rust); font-size: 1.3rem; cursor: pointer; padding: 4px 8px; }
 
 .set-row {
-  display: grid; grid-template-columns: 28px 1fr 1fr 32px; gap: 10px; align-items: center;
+  display: grid; grid-template-columns: 28px 1fr 1fr 26px 30px; gap: 8px; align-items: center;
   padding: 10px 14px; border-bottom: 1px solid var(--line);
 }
 .set-row:last-child { border-bottom: none; }
@@ -200,6 +200,63 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 #photoGenerateBtn { background: var(--photo-red); color: #fff; }
 #photoSaveBtn { background: var(--steel); color: #0d0d0d; }
 .photo-hint { font-size: 0.8rem; color: var(--text-dim); text-align: center; margin-top: -8px; margin-bottom: 16px; display: none; }
+
+/* Today tab tools, targets, records, rest timer */
+.log-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -4px 0 14px; }
+.log-tools button {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px; color: var(--text-dim);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 600; font-size: 0.9rem; padding: 7px 12px; cursor: pointer;
+}
+.log-tools .hint { font-size: 0.78rem; color: var(--text-dim); text-align: right; }
+.target-line { font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--steel-light); margin-top: 2px; }
+.mk { text-align: center; font-size: 0.95rem; color: var(--steel-light); }
+
+.rest-bar {
+  display: none; position: fixed; left: 0; right: 0; bottom: 80px; z-index: 5;
+  align-items: center; gap: 10px; padding: 10px 18px; background: #1a1a1a; border-top: 1px solid var(--steel);
+}
+.rest-bar.show { display: flex; }
+.rest-bar .rest-label { font-size: 0.9rem; color: var(--text-dim); font-weight: 600; }
+.rest-bar .rest-time { font-family: 'Space Mono', monospace; font-size: 1.5rem; font-weight: 700; flex: 1; }
+.rest-bar button {
+  background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 0.95rem; padding: 8px 12px; cursor: pointer;
+}
+.rest-bar.done { background: var(--photo-red); border-top-color: var(--photo-red); }
+.rest-bar.done .rest-label { color: #fff; }
+body.rest-on { padding-bottom: 150px; }
+
+/* Backup */
+.backup-card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px; margin-top: 18px; }
+.backup-card .b-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 4px; }
+.backup-note { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 10px; }
+.backup-note.warn { color: var(--rust); }
+.backup-row { display: flex; gap: 10px; }
+.backup-row button {
+  flex: 1; padding: 12px; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px; color: var(--text);
+  font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 1rem; cursor: pointer;
+}
+
+/* Weekly volume */
+.vol-title { font-size: 1.2rem; font-weight: 600; }
+.vol-sub { font-size: 0.78rem; color: var(--text-dim); margin-bottom: 10px; }
+.vol-row { display: grid; grid-template-columns: 96px 1fr 74px; gap: 8px; align-items: center; margin-bottom: 8px; }
+.vol-name { font-size: 0.95rem; font-weight: 600; }
+.vol-bar { position: relative; height: 8px; background: #2a2a2a; border-radius: 4px; }
+.vol-fill { height: 100%; border-radius: 4px; background: var(--steel); }
+.vol-fill.prio { background: var(--photo-red); }
+.vol-tick { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--text); opacity: 0.7; }
+.vol-num { font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--text-dim); text-align: right; }
+
+/* Before / After */
+.cmp-section { margin-top: 28px; padding-top: 18px; border-top: 1px solid var(--line); }
+.cmp-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 12px; }
+.cmp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cmp-side .photo-upload-btn { padding: 14px 6px; font-size: 0.95rem; }
+#cmpCanvasWrap { display: none; margin-bottom: 16px; border-radius: 6px; overflow: hidden; border: 1px solid var(--line); background: #000; }
+#cmpCanvas { display: block; width: 100%; height: auto; }
+#cmpGenerateBtn { background: var(--photo-red); color: #fff; }
+#cmpSaveBtn { background: var(--steel); color: #0d0d0d; }
 </style>
 </head>
 <body>
@@ -218,6 +275,10 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 
 <div id="log">
   <div class="day-buttons" id="dayButtons"></div>
+  <div class="log-tools">
+    <button id="restToggle" onclick="toggleRestAuto()">⏱ Rest timer: ON</button>
+    <span class="hint">🏆 new record · ↑ better than last time</span>
+  </div>
   <div id="exerciseList"></div>
 
   <div class="add-exercise-row">
@@ -228,10 +289,20 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 
 <div id="history">
   <div id="historyList"></div>
+  <div class="backup-card">
+    <div class="b-title">Backup</div>
+    <div class="backup-note" id="backupNote"></div>
+    <div class="backup-row">
+      <button onclick="exportBackup()">⬇ Export</button>
+      <button onclick="document.getElementById('importFile').click()">⬆ Import</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json,.json" style="display:none" onchange="importBackup(event)"/>
+  </div>
 </div>
 
 <div id="progress">
   <div id="heatmapWrap"></div>
+  <div id="volumeWrap"></div>
   <div id="progressList"></div>
 </div>
 
@@ -258,6 +329,39 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
   <div class="photo-actions" id="photoActionsPost">
     <button id="photoSaveBtn" onclick="savePhotoToDevice()">💾 Αποθήκευση στη συσκευή</button>
   </div>
+
+  <div class="cmp-section">
+    <div class="cmp-title">Before / After</div>
+    <div class="cmp-grid">
+      <div class="cmp-side">
+        <label class="photo-upload-btn" id="cmpLabelA" for="cmpFileA">📷 Before</label>
+        <input type="file" id="cmpFileA" accept="image/*" style="display:none" onchange="onCompareSelected('A', event)"/>
+        <div class="photo-field"><label for="cmpDayA">Μέρα</label><input type="text" id="cmpDayA" placeholder="DAY 1"/></div>
+        <div class="photo-field"><label for="cmpWeightA">Κιλά</label><input type="number" inputmode="decimal" id="cmpWeightA" placeholder="110.8"/></div>
+      </div>
+      <div class="cmp-side">
+        <label class="photo-upload-btn" id="cmpLabelB" for="cmpFileB">📷 After</label>
+        <input type="file" id="cmpFileB" accept="image/*" style="display:none" onchange="onCompareSelected('B', event)"/>
+        <div class="photo-field"><label for="cmpDayB">Μέρα</label><input type="text" id="cmpDayB" placeholder="DAY 30"/></div>
+        <div class="photo-field"><label for="cmpWeightB">Κιλά</label><input type="number" inputmode="decimal" id="cmpWeightB" placeholder="105.2"/></div>
+      </div>
+    </div>
+    <div class="photo-actions" id="cmpActionsPre">
+      <button id="cmpGenerateBtn" onclick="generateCompare()">Δημιούργησε</button>
+    </div>
+    <div id="cmpCanvasWrap"><canvas id="cmpCanvas"></canvas></div>
+    <div class="photo-actions" id="cmpActionsPost">
+      <button id="cmpSaveBtn" onclick="saveCompareToDevice()">💾 Αποθήκευση στη συσκευή</button>
+    </div>
+  </div>
+</div>
+
+<div class="rest-bar" id="restBar">
+  <span class="rest-label">Rest</span>
+  <span class="rest-time" id="restTime">0:00</span>
+  <button onclick="adjustRest(-15)">−15</button>
+  <button onclick="adjustRest(15)">+15</button>
+  <button onclick="stopRest()">Skip</button>
 </div>
 
 <div class="finish-bar">
@@ -265,13 +369,28 @@ header .date { font-family: 'Space Mono', monospace; font-size: 0.8rem; color: v
 </div>
 
 <script>
-const DAY_TEMPLATES = [
-  { label: 'Day 1 — Push (Chest)', exercises: ['Incline DB Press', 'Flat Bench Press', 'Cable Fly', 'Overhead Press', 'Lateral Raise', 'Overhead Triceps Extension', 'Triceps Pushdown'] },
-  { label: 'Day 2 — Pull', exercises: ['Wide-Grip Pull-ups', 'Barbell Row', 'Face Pull', 'Barbell Shrugs', 'Incline DB Curl', 'Hammer Curl'] },
-  { label: 'Day 3 — Legs (Glutes)', exercises: ['Barbell Hip Thrust', 'Back Squat', 'Romanian Deadlift', 'Leg Curl', 'Calf Raise', 'Hanging Leg Raise', 'Cable Crunch'] },
-  { label: 'Day 4 — Upper', exercises: ['Incline Bench Press', 'Seated Cable Row', 'Chest Dips', 'Lat Pulldown', 'Rear Delt Fly', 'Close-Grip Bench Press', 'EZ-Bar Curl'] },
-  { label: 'Day 5 — Lower', exercises: ['Bulgarian Split Squat', 'Cable Pull-Through', 'Leg Press', 'Weighted Back Extension', 'Standing Calf Raise', 'Ab Wheel Rollout', 'Cable Woodchopper'] }
+const DAY_PLAN = [
+  { label: 'Day 1 — Push (Chest)', ex: [
+    ['Incline DB Press', '4×8-10'], ['Flat Bench Press', '4×6-8'], ['Cable Fly', '3×12-15'],
+    ['Overhead Press', '3×8-10'], ['Lateral Raise', '3×12-15'],
+    ['Overhead Triceps Extension', '3×10-12'], ['Triceps Pushdown', '3×12-15'] ] },
+  { label: 'Day 2 — Pull', ex: [
+    ['Wide-Grip Pull-ups', '4×6-10'], ['Barbell Row', '3×8-10'], ['Face Pull', '3×15'],
+    ['Barbell Shrugs', '2×12-15'], ['Incline DB Curl', '4×10-12'], ['Hammer Curl', '3×12-15'] ] },
+  { label: 'Day 3 — Legs (Glutes)', ex: [
+    ['Barbell Hip Thrust', '4×8-10'], ['Back Squat', '4×6-8'], ['Romanian Deadlift', '3×8-10'],
+    ['Leg Curl', '3×12-15'], ['Calf Raise', '3×12-15'], ['Hanging Leg Raise', '3×12-15'], ['Cable Crunch', '3×15-20'] ] },
+  { label: 'Day 4 — Upper', ex: [
+    ['Incline Bench Press', '3×8-10'], ['Seated Cable Row', '3×8-10'], ['Chest Dips', '3×10-12'],
+    ['Lat Pulldown', '3×10-12'], ['Rear Delt Fly', '3×15-20'], ['Close-Grip Bench Press', '3×8-10'], ['EZ-Bar Curl', '3×8-10'] ] },
+  { label: 'Day 5 — Lower', ex: [
+    ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'],
+    ['Weighted Back Extension', '3×12-15'], ['Standing Calf Raise', '4×15-20'],
+    ['Ab Wheel Rollout', '3×12-15'], ['Cable Woodchopper', '3×12-15/side'] ] }
 ];
+const DAY_TEMPLATES = DAY_PLAN.map(d => ({ label: d.label, exercises: d.ex.map(e => e[0]) }));
+const TARGET_BY_NAME = {};
+DAY_PLAN.forEach(d => d.ex.forEach(([n, t]) => { TARGET_BY_NAME[n.toLowerCase()] = t; }));
 
 const STORAGE_KEY = 'workoutLog_sessions';
 const DRAFT_KEY = 'workoutLog_draft';
@@ -323,11 +442,12 @@ function renderDayButtons() {
 }
 
 function loadDay(dayIdx) {
-  const template = DAY_TEMPLATES[dayIdx];
+  const plan = DAY_PLAN[dayIdx];
   const existingNames = draft.exercises.map(ex => ex.name.toLowerCase());
-  template.exercises.forEach(name => {
+  plan.ex.forEach(([name, target]) => {
     if (!existingNames.includes(name.toLowerCase())) {
-      draft.exercises.push({ name, sets: [{ kg: '', reps: '' }] });
+      const n = (parseTarget(target) || { sets: 1 }).sets;
+      draft.exercises.push({ name, sets: Array.from({ length: n }, () => ({ kg: '', reps: '' })) });
     }
   });
   saveDraft(draft);
@@ -366,9 +486,18 @@ function removeSet(exIdx, setIdx) {
 }
 
 function updateSet(exIdx, setIdx, field, value) {
-  draft.exercises[exIdx].sets[setIdx][field] = value;
+  const ex = draft.exercises[exIdx];
+  const set = ex.sets[setIdx];
+  const wasComplete = set.kg !== '' && set.reps !== '';
+  set[field] = value;
   saveDraft(draft);
   updateFinishButton();
+
+  const mk = document.getElementById(`mk_${exIdx}_${setIdx}`);
+  if (mk) mk.textContent = setMarker(ex.name, setIdx, set.kg, set.reps);
+
+  const nowComplete = set.kg !== '' && set.reps !== '';
+  if (!wasComplete && nowComplete && restAutoOn()) startRest(restSecondsFor(ex.name));
 }
 
 function updateFinishButton() {
@@ -386,28 +515,35 @@ function renderLog() {
 
   container.innerHTML = draft.exercises.map((ex, exIdx) => {
     const lastTime = findLastTime(ex.name);
-    const setsHtml = ex.sets.map((s, setIdx) => `
+    const lastSets = findLastSets(ex.name);
+    const target = TARGET_BY_NAME[ex.name.toLowerCase()];
+    const setsHtml = ex.sets.map((s, setIdx) => {
+      const ls = lastSets[setIdx];
+      const phKg = ls ? ls.kg : 0, phReps = ls ? ls.reps : 0;
+      return `
       <div class="set-row">
         <span class="set-num">${setIdx + 1}</span>
         <div>
-          <input type="number" inputmode="decimal" placeholder="0" value="${s.kg}"
+          <input type="number" inputmode="decimal" placeholder="${phKg}" value="${s.kg}"
             onchange="updateSet(${exIdx},${setIdx},'kg',this.value)"/>
           <span class="unit">kg</span>
         </div>
         <div>
-          <input type="number" inputmode="numeric" placeholder="0" value="${s.reps}"
+          <input type="number" inputmode="numeric" placeholder="${phReps}" value="${s.reps}"
             onchange="updateSet(${exIdx},${setIdx},'reps',this.value)"/>
           <span class="unit">reps</span>
         </div>
+        <span class="mk" id="mk_${exIdx}_${setIdx}">${setMarker(ex.name, setIdx, s.kg, s.reps)}</span>
         <button class="remove-set" onclick="removeSet(${exIdx},${setIdx})">✕</button>
-      </div>
-    `).join('');
+      </div>`;
+    }).join('');
 
     return `
       <div class="exercise">
         <div class="exercise-head">
           <div>
-            <h3>${ex.name}</h3>
+            <h3>${esc(ex.name)}</h3>
+            ${target ? `<div class="target-line">Target ${esc(target)}</div>` : ''}
             ${lastTime ? `<div class="last-time">Last: ${lastTime}</div>` : ''}
           </div>
           <button class="remove-ex" onclick="removeExercise(${exIdx})">✕</button>
@@ -602,6 +738,7 @@ function renderHeatmap() {
 
 function renderProgress() {
   renderHeatmap();
+  renderWeeklyVolume();
   const data = buildProgressData();
   const container = document.getElementById('progressList');
 
@@ -636,6 +773,7 @@ function switchTab(tab) {
   document.getElementById('tabHistory').classList.toggle('active', tab === 'history');
   document.getElementById('tabProgress').classList.toggle('active', tab === 'progress');
   document.getElementById('tabPhoto').classList.toggle('active', tab === 'photo');
+  if (tab === 'history') renderBackupNote();
   if (tab === 'progress') renderProgress();
   if (tab === 'photo') initPhotoTab();
 }
@@ -685,21 +823,17 @@ function onPhotoSelected(event) {
   reader.readAsDataURL(file);
 }
 
-function generatePhotoOverlay() {
-  if (!selectedPhotoImg) return;
-  const dayLabel = (document.getElementById('photoDay').value || 'DAY 1').trim().toUpperCase();
-  const weightVal = document.getElementById('photoWeight').value.trim();
-  const weightText = weightVal || '--';
-  const dateText = todayLabelDots();
+function ensureFonts() {
+  const loads = ['800 100px Poppins', '700 100px Poppins', '600 100px Poppins']
+    .map(f => (document.fonts && document.fonts.load) ? document.fonts.load(f) : Promise.resolve());
+  return Promise.race([Promise.all(loads).catch(() => {}), new Promise(r => setTimeout(r, 1500))]);
+}
 
-  const img = selectedPhotoImg;
-  const canvas = document.getElementById('photoCanvas');
-  const W = img.naturalWidth, H = img.naturalHeight;
-  canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(img, 0, 0, W, H);
+// Draws the gradient + "DAY X / weight kg / date" overlay inside a W x H box whose top-left is (ox, oy).
+function drawOverlay(ctx, ox, oy, W, H, dayLabel, weightText, dateText) {
+  ctx.save();
+  ctx.translate(ox, oy);
 
-  // Bottom gradient for legibility
   const gradH = H * 0.30;
   const gradient = ctx.createLinearGradient(0, H - gradH, 0, H);
   gradient.addColorStop(0, 'rgba(8,4,4,0)');
@@ -710,22 +844,20 @@ function generatePhotoOverlay() {
   const margin = W * 0.046;
   const redColor = '#e5393b';
 
-  // DAY label with letter spacing
   const labelFontSize = Math.round(H * 0.0198);
   ctx.font = `700 ${labelFontSize}px 'Poppins', sans-serif`;
   ctx.fillStyle = redColor;
   ctx.textBaseline = 'alphabetic';
+  ctx.textAlign = 'left';
   const labelY = H - H * 0.164;
   let lx = margin;
-  const spacedLabel = dayLabel.split('').join(' ');
-  for (const ch of spacedLabel) {
+  for (const ch of dayLabel.split('').join(' ')) {
     ctx.fillText(ch, lx, labelY);
     lx += ctx.measureText(ch).width + labelFontSize * 0.28;
   }
   const labelWidth = lx - margin - labelFontSize * 0.28;
   ctx.fillRect(margin, labelY + labelFontSize * 0.22, labelWidth, Math.max(2, H * 0.002));
 
-  // Big weight number
   const numFontSize = Math.round(H * 0.0745);
   ctx.font = `800 ${numFontSize}px 'Poppins', sans-serif`;
   ctx.fillStyle = '#ffffff';
@@ -733,18 +865,34 @@ function generatePhotoOverlay() {
   ctx.fillText(weightText, margin, numY);
   const numWidth = ctx.measureText(weightText).width;
 
-  // kg unit
   const unitFontSize = Math.round(H * 0.0228);
   ctx.font = `700 ${unitFontSize}px 'Poppins', sans-serif`;
   ctx.fillStyle = redColor;
   ctx.fillText('kg', margin + numWidth + numFontSize * 0.09, numY);
 
-  // date bottom right
-  const dateFontSize = Math.round(H * 0.0149);
-  ctx.font = `600 ${dateFontSize}px 'Poppins', sans-serif`;
-  ctx.fillStyle = '#bebebe';
-  const dateWidth = ctx.measureText(dateText).width;
-  ctx.fillText(dateText, W - margin - dateWidth, H - H * 0.03);
+  if (dateText) {
+    const dateFontSize = Math.round(H * 0.0149);
+    ctx.font = `600 ${dateFontSize}px 'Poppins', sans-serif`;
+    ctx.fillStyle = '#bebebe';
+    const dateWidth = ctx.measureText(dateText).width;
+    ctx.fillText(dateText, W - margin - dateWidth, H - H * 0.03);
+  }
+  ctx.restore();
+}
+
+async function generatePhotoOverlay() {
+  if (!selectedPhotoImg) return;
+  await ensureFonts();
+  const dayLabel = (document.getElementById('photoDay').value || 'DAY 1').trim().toUpperCase();
+  const weightVal = document.getElementById('photoWeight').value.trim();
+
+  const img = selectedPhotoImg;
+  const canvas = document.getElementById('photoCanvas');
+  const W = img.naturalWidth, H = img.naturalHeight;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, W, H);
+  drawOverlay(ctx, 0, 0, W, H, dayLabel, weightVal || '--', todayLabelDots());
 
   document.getElementById('photoCanvasWrap').style.display = 'block';
   document.getElementById('photoActionsPost').style.display = 'flex';
@@ -753,11 +901,7 @@ function generatePhotoOverlay() {
   if (weightVal) localStorage.setItem(PHOTO_LAST_WEIGHT_KEY, weightVal);
 }
 
-function savePhotoToDevice() {
-  const canvas = document.getElementById('photoCanvas');
-  const dayLabel = (document.getElementById('photoDay').value || 'day').trim().toLowerCase().replace(/\s+/g, '-');
-  const filename = `progress-${dayLabel}.jpg`;
-
+function saveCanvasToDevice(canvas, filename, onSaved) {
   canvas.toBlob(async (blob) => {
     if (!blob) return;
     const file = new File([blob], filename, { type: 'image/jpeg' });
@@ -766,14 +910,14 @@ function savePhotoToDevice() {
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       try {
         await navigator.share({ files: [file] });
-        bumpPhotoCount();
+        if (onSaved) onSaved();
         return;
       } catch (err) {
-        // user cancelled share or it failed - fall through to direct download
+        if (err && err.name === 'AbortError') return; // user closed the share sheet
       }
     }
 
-    // Fallback: trigger a direct download.
+    // Fallback: direct download.
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -782,8 +926,14 @@ function savePhotoToDevice() {
     a.click();
     document.body.removeChild(a);
     setTimeout(() => URL.revokeObjectURL(url), 2000);
-    bumpPhotoCount();
+    if (onSaved) onSaved();
   }, 'image/jpeg', 0.92);
+}
+
+function savePhotoToDevice() {
+  const canvas = document.getElementById('photoCanvas');
+  const dayLabel = (document.getElementById('photoDay').value || 'day').trim().toLowerCase().replace(/\s+/g, '-');
+  saveCanvasToDevice(canvas, `progress-${dayLabel}.jpg`, bumpPhotoCount);
 }
 
 function bumpPhotoCount() {
@@ -791,9 +941,409 @@ function bumpPhotoCount() {
   localStorage.setItem(PHOTO_COUNT_KEY, String(count + 1));
 }
 
+
+/* ---------- Targets, records, rest timer ---------- */
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function parseTarget(t) {
+  const m = /^(\d+)×(\d+)(?:-(\d+))?/.exec(t || '');
+  if (!m) return null;
+  return { sets: parseInt(m[1], 10), repsLo: parseInt(m[2], 10), repsHi: parseInt(m[3] || m[2], 10) };
+}
+
+function exerciseHistory(name) {
+  const key = name.toLowerCase();
+  return loadSessions().map(s => s.exercises.find(e => e.name.toLowerCase() === key)).filter(Boolean);
+}
+
+function findLastSets(name) {
+  const h = exerciseHistory(name);
+  return h.length ? h[h.length - 1].sets : [];
+}
+
+// 🏆 = heavier than ever (or same weight, more reps); ↑ = better than the same set last time.
+function setMarker(name, setIdx, kgStr, repsStr) {
+  const kg = parseFloat(kgStr), reps = parseInt(repsStr, 10);
+  if (!(kg > 0) || !(reps > 0)) return '';
+  const hist = exerciseHistory(name);
+  if (!hist.length) return '';
+
+  let bestKg = 0, bestReps = 0;
+  hist.forEach(e => e.sets.forEach(s => {
+    const k = parseFloat(s.kg) || 0, r = parseInt(s.reps, 10) || 0;
+    if (k > bestKg || (k === bestKg && r > bestReps)) { bestKg = k; bestReps = r; }
+  }));
+  if (kg > bestKg || (kg === bestKg && reps > bestReps)) return '🏆';
+
+  const last = hist[hist.length - 1].sets[setIdx];
+  if (last) {
+    const lk = parseFloat(last.kg) || 0, lr = parseInt(last.reps, 10) || 0;
+    if (kg > lk || (kg === lk && reps > lr)) return '↑';
+  }
+  return '';
+}
+
+const REST_KEY = 'workoutLog_restAuto';
+let restEnd = 0, restTimer = null, restAudio = null, restToken = 0;
+
+function restAutoOn() { return localStorage.getItem(REST_KEY) !== 'off'; }
+function renderRestToggle() {
+  document.getElementById('restToggle').textContent = '⏱ Rest timer: ' + (restAutoOn() ? 'ON' : 'OFF');
+}
+function toggleRestAuto() {
+  localStorage.setItem(REST_KEY, restAutoOn() ? 'off' : 'on');
+  renderRestToggle();
+  if (!restAutoOn()) stopRest();
+}
+
+// Heavier / lower-rep work gets longer rest, same idea as the plan: compounds 2-3 min, isolation ~1 min.
+function restSecondsFor(name) {
+  const p = parseTarget(TARGET_BY_NAME[name.toLowerCase()]);
+  if (!p) return 90;
+  if (p.repsHi <= 8) return 150;
+  if (p.repsHi <= 10) return 120;
+  if (p.repsHi <= 12) return 90;
+  if (p.repsHi <= 15) return 75;
+  return 60;
+}
+
+function fmtClock(sec) { return `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`; }
+
+function startRest(sec) {
+  restToken++;
+  restEnd = Date.now() + sec * 1000;
+  const bar = document.getElementById('restBar');
+  bar.classList.add('show');
+  bar.classList.remove('done');
+  document.body.classList.add('rest-on');
+  clearInterval(restTimer);
+  restTimer = setInterval(tickRest, 250);
+  tickRest();
+}
+
+function tickRest() {
+  const left = Math.ceil((restEnd - Date.now()) / 1000);
+  if (left <= 0) { restDone(); return; }
+  document.getElementById('restTime').textContent = fmtClock(left);
+}
+
+function restDone() {
+  clearInterval(restTimer);
+  restTimer = null;
+  document.getElementById('restBar').classList.add('done');
+  document.getElementById('restTime').textContent = 'GO';
+  beep();
+  const token = restToken;
+  setTimeout(() => { if (token === restToken) stopRest(); }, 8000);
+}
+
+function adjustRest(delta) {
+  if (!restTimer) return;
+  restEnd += delta * 1000;
+  tickRest();
+}
+
+function stopRest() {
+  restToken++;
+  clearInterval(restTimer);
+  restTimer = null;
+  document.getElementById('restBar').classList.remove('show', 'done');
+  document.body.classList.remove('rest-on');
+}
+
+function initAudio() {
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    restAudio = restAudio || new AC();
+    if (restAudio.state === 'suspended') restAudio.resume();
+  } catch (e) {}
+}
+function beep() {
+  try {
+    if (restAudio) {
+      const o = restAudio.createOscillator(), g = restAudio.createGain();
+      o.connect(g); g.connect(restAudio.destination);
+      o.frequency.value = 880; g.gain.value = 0.15;
+      o.start(); o.stop(restAudio.currentTime + 0.25);
+    }
+  } catch (e) {}
+  try { if (navigator.vibrate) navigator.vibrate([200, 100, 200]); } catch (e) {}
+}
+// Browsers only allow sound after a tap, so unlock audio on the first touch.
+document.addEventListener('touchstart', initAudio, { once: true });
+document.addEventListener('click', initAudio, { once: true });
+
+/* ---------- Backup ---------- */
+const LAST_BACKUP_KEY = 'workoutLog_lastBackup';
+
+function collectBackup() {
+  const data = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('workoutLog_')) data[k] = localStorage.getItem(k);
+  }
+  return { app: 'workout-tracker', version: 1, exportedAt: new Date().toISOString(), data };
+}
+
+function renderBackupNote() {
+  const el = document.getElementById('backupNote');
+  const last = localStorage.getItem(LAST_BACKUP_KEY);
+  let warn = !last;
+  if (last) {
+    const days = (new Date() - parseSessionDate(last)) / 86400000;
+    warn = days > 14;
+  }
+  el.classList.toggle('warn', warn);
+  el.textContent = last
+    ? `${warn ? '⚠ ' : ''}Last backup: ${last}`
+    : '⚠ No backup yet. Everything is stored only on this phone.';
+}
+
+function exportBackup() {
+  const json = JSON.stringify(collectBackup());
+  const fname = `workout-backup-${todayStr().split('/').reverse().join('-')}.json`;
+  const blob = new Blob([json], { type: 'application/json' });
+  const file = new File([blob], fname, { type: 'application/json' });
+  const done = () => { localStorage.setItem(LAST_BACKUP_KEY, todayStr()); renderBackupNote(); };
+
+  const download = () => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = fname;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    done();
+  };
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    navigator.share({ files: [file] }).then(done).catch(err => { if (!err || err.name !== 'AbortError') download(); });
+  } else {
+    download();
+  }
+}
+
+function importBackup(event) {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let obj;
+    try { obj = JSON.parse(reader.result); } catch (e) { obj = null; }
+    if (!obj || obj.app !== 'workout-tracker' || !obj.data || typeof obj.data !== 'object') {
+      alert('This is not a valid workout backup file.');
+      return;
+    }
+    let count = 0;
+    try { count = (JSON.parse(obj.data[STORAGE_KEY] || '[]') || []).length; } catch (e) {}
+    if (!confirm(`Replace everything on this phone with this backup (${count} workouts)?`)) return;
+
+    Object.keys(localStorage).filter(k => k.startsWith('workoutLog_')).forEach(k => localStorage.removeItem(k));
+    Object.keys(obj.data).filter(k => k.startsWith('workoutLog_')).forEach(k => localStorage.setItem(k, obj.data[k]));
+    location.reload();
+  };
+  reader.readAsText(file);
+}
+
+/* ---------- Weekly volume per muscle ---------- */
+const MUSCLES = [
+  ['chest', 'Chest', true], ['back', 'Back', false], ['shoulders', 'Shoulders', false],
+  ['biceps', 'Biceps', false], ['triceps', 'Triceps', false], ['quads', 'Quads', false],
+  ['hamstrings', 'Hamstrings', false], ['glutes', 'Glutes', true], ['calves', 'Calves', false], ['abs', 'Abs', true]
+];
+const MUSCLE_MAP = {
+  'incline db press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
+  'flat bench press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
+  'cable fly': { chest: 1 },
+  'incline bench press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
+  'chest dips': { chest: 1, triceps: 0.5 },
+  'close-grip bench press': { triceps: 1, chest: 0.5 },
+  'overhead press': { shoulders: 1, triceps: 0.5 },
+  'lateral raise': { shoulders: 1 },
+  'rear delt fly': { shoulders: 1 },
+  'face pull': { shoulders: 1 },
+  'overhead triceps extension': { triceps: 1 },
+  'triceps pushdown': { triceps: 1 },
+  'wide-grip pull-ups': { back: 1, biceps: 0.5 },
+  'barbell row': { back: 1, biceps: 0.5 },
+  'seated cable row': { back: 1, biceps: 0.5 },
+  'lat pulldown': { back: 1, biceps: 0.5 },
+  'barbell shrugs': { back: 1 },
+  'incline db curl': { biceps: 1 },
+  'hammer curl': { biceps: 1 },
+  'ez-bar curl': { biceps: 1 },
+  'barbell hip thrust': { glutes: 1 },
+  'back squat': { quads: 1, glutes: 0.5 },
+  'romanian deadlift': { hamstrings: 1, glutes: 0.5 },
+  'leg curl': { hamstrings: 1 },
+  'calf raise': { calves: 1 },
+  'standing calf raise': { calves: 1 },
+  'bulgarian split squat': { quads: 1, glutes: 0.5 },
+  'cable pull-through': { glutes: 1, hamstrings: 0.5 },
+  'leg press': { quads: 1, glutes: 0.5 },
+  'weighted back extension': { glutes: 0.5, hamstrings: 0.5 },
+  'hanging leg raise': { abs: 1 },
+  'cable crunch': { abs: 1 },
+  'ab wheel rollout': { abs: 1 },
+  'cable woodchopper': { abs: 1 }
+};
+
+function plannedVolume() {
+  const p = {};
+  DAY_PLAN.forEach(d => d.ex.forEach(([n, t]) => {
+    const pt = parseTarget(t), mm = MUSCLE_MAP[n.toLowerCase()];
+    if (!pt || !mm) return;
+    for (const m in mm) p[m] = (p[m] || 0) + pt.sets * mm[m];
+  }));
+  return p;
+}
+
+function weeklyVolume() {
+  const now = new Date();
+  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+  const next = new Date(monday); next.setDate(monday.getDate() + 7);
+  const done = {};
+  const addEx = (ex) => {
+    const mm = MUSCLE_MAP[ex.name.toLowerCase()];
+    if (!mm) return;
+    const n = ex.sets.filter(s => s.kg !== '' && s.reps !== '').length;
+    for (const m in mm) done[m] = (done[m] || 0) + n * mm[m];
+  };
+  loadSessions().forEach(s => {
+    const dt = parseSessionDate(s.date);
+    if (dt >= monday && dt < next) s.exercises.forEach(addEx);
+  });
+  draft.exercises.forEach(addEx); // today's workout in progress
+  return done;
+}
+
+function fmtSets(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1); }
+
+function renderWeeklyVolume() {
+  const planned = plannedVolume(), done = weeklyVolume();
+  const rows = MUSCLES.map(([key, label, prio]) => {
+    const p = planned[key] || 0, d = done[key] || 0;
+    const scale = Math.max(p, d, 1);
+    const fill = (d / scale * 100).toFixed(1), tick = (p / scale * 100).toFixed(1);
+    return `
+      <div class="vol-row">
+        <div class="vol-name">${prio ? '★ ' : ''}${label}</div>
+        <div class="vol-bar"><div class="vol-fill ${prio ? 'prio' : ''}" style="width:${fill}%"></div><div class="vol-tick" style="left:calc(${tick}% - 1px)"></div></div>
+        <div class="vol-num">${fmtSets(d)} / ${fmtSets(p)}</div>
+      </div>`;
+  }).join('');
+  document.getElementById('volumeWrap').innerHTML = `
+    <div class="heatmap-card">
+      <div class="vol-title">This week · sets</div>
+      <div class="vol-sub">Done vs. your plan. Secondary muscles count ½. ★ = priority.</div>
+      ${rows}
+    </div>`;
+}
+
+/* ---------- Before / After ---------- */
+const cmpImgs = { A: null, B: null };
+
+function onCompareSelected(side, event) {
+  const file = event.target.files && event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = new Image();
+    img.onload = () => {
+      cmpImgs[side] = img;
+      const label = document.getElementById('cmpLabel' + side);
+      label.textContent = '📷 ' + (side === 'A' ? 'Before ✓' : 'After ✓');
+      label.classList.add('has-image');
+      if (cmpImgs.A && cmpImgs.B) document.getElementById('cmpActionsPre').style.display = 'flex';
+      document.getElementById('cmpCanvasWrap').style.display = 'none';
+      document.getElementById('cmpActionsPost').style.display = 'none';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Fill the box with the image (crop to cover), keeping the upper part of the photo a bit more.
+function drawCover(ctx, img, dx, dy, dw, dh, focusY) {
+  const s = Math.max(dw / img.naturalWidth, dh / img.naturalHeight);
+  const sw = dw / s, sh = dh / s;
+  const sx = (img.naturalWidth - sw) / 2;
+  const sy = (img.naturalHeight - sh) * (focusY == null ? 0.35 : focusY);
+  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
+
+function roundRectPath(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+async function generateCompare() {
+  if (!cmpImgs.A || !cmpImgs.B) return;
+  await ensureFonts();
+  const pw = 1080, ph = 1440;
+  const canvas = document.getElementById('cmpCanvas');
+  canvas.width = pw * 2; canvas.height = ph;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, pw * 2, ph);
+
+  ['A', 'B'].forEach((side, i) => {
+    drawCover(ctx, cmpImgs[side], i * pw, 0, pw, ph);
+    const day = (document.getElementById('cmpDay' + side).value || (i ? 'NOW' : 'BEFORE')).trim().toUpperCase();
+    const w = document.getElementById('cmpWeight' + side).value.trim();
+    drawOverlay(ctx, i * pw, 0, pw, ph, day, w || '--', '');
+  });
+
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(pw - 3, 0, 6, ph);
+
+  const a = parseFloat(document.getElementById('cmpWeightA').value);
+  const b = parseFloat(document.getElementById('cmpWeightB').value);
+  if (!isNaN(a) && !isNaN(b)) {
+    const diff = Math.round((b - a) * 10) / 10;
+    const text = (diff > 0 ? '+' : diff < 0 ? '−' : '') + Math.abs(diff).toFixed(1) + ' kg';
+    const fs = Math.round(ph * 0.036);
+    ctx.font = `800 ${fs}px 'Poppins', sans-serif`;
+    const tw = ctx.measureText(text).width;
+    const padX = fs * 0.9, bh = fs * 1.9, bw = tw + padX * 2;
+    const cx = pw, cy = ph * 0.075;
+    roundRectPath(ctx, cx - bw / 2, cy - bh / 2, bw, bh, bh / 2);
+    ctx.fillStyle = 'rgba(8,4,4,0.9)';
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#e5393b';
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, cx, cy + fs * 0.05);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  document.getElementById('cmpCanvasWrap').style.display = 'block';
+  document.getElementById('cmpActionsPost').style.display = 'flex';
+}
+
+function saveCompareToDevice() {
+  const dayA = (document.getElementById('cmpDayA').value || 'before').trim().toLowerCase().replace(/\s+/g, '-');
+  const dayB = (document.getElementById('cmpDayB').value || 'after').trim().toLowerCase().replace(/\s+/g, '-');
+  saveCanvasToDevice(document.getElementById('cmpCanvas'), `before-after-${dayA}-vs-${dayB}.jpg`);
+}
+
 renderDayButtons();
 renderLog();
 renderHistory();
+renderRestToggle();
+renderBackupNote();
 </script>
 </body>
 </html>
