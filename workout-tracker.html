@@ -387,7 +387,7 @@ const DAY_PLAN = [
     ['Barbell Hip Thrust', '4×8-10'], ['Back Squat', '4×6-8'], ['Romanian Deadlift', '3×8-10'],
     ['Leg Curl', '3×12-15'], ['Calf Raise', '3×12-15'], ['Hanging Leg Raise', '3×12-15'], ['Cable Crunch', '3×15-20'] ] },
   { label: 'Day 4 — Upper', ex: [
-    ['Incline Bench Press', '3×8-10'], ['Seated Cable Row', '3×8-10'], ['Chest Dips', '3×10-12'],
+    ['Incline Bench Press', '3×8-10'], ['Seated Cable Row', '3×8-10'], ['Dip Machine', '3×10-12'],
     ['Lat Pulldown', '3×10-12'], ['Lateral Raise', '3×12-15'], ['Rear Delt Fly', '3×15-20'], ['Close-Grip Bench Press', '3×8-10'], ['EZ-Bar Curl', '3×8-10'] ] },
   { label: 'Day 5 — Lower', ex: [
     ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'], ['Leg Extension', '3×12-15'], ['Cable Hip Abduction', '3×15/leg'],
@@ -430,7 +430,7 @@ if (draft.date !== todayStr()) {
 document.getElementById('todayLabel').textContent = todayStr();
 
 // Bodyweight exercises: reps only is enough (kg stays 0 unless you add weight).
-const BW_NAMES = ['hanging leg raise', 'ab wheel rollout', 'wide-grip pull-ups', 'chest dips'];
+const BW_NAMES = ['hanging leg raise', 'ab wheel rollout', 'wide-grip pull-ups'];
 function isBW(name) { return BW_NAMES.includes(String(name).toLowerCase()); }
 function fmtSet(name, s) {
   const kg = parseFloat(s.kg) || 0;
@@ -1026,7 +1026,7 @@ const REST_BY_NAME = {
   'wide-grip pull-ups':150,'barbell row':150,'face pull':60,'barbell shrugs':90,'incline db curl':75,'hammer curl':60,
   'barbell hip thrust':150,'back squat':180,'romanian deadlift':150,'leg curl':75,'calf raise':60,
   'hanging leg raise':75,'cable crunch':60,
-  'incline bench press':150,'seated cable row':120,'chest dips':120,'lat pulldown':120,'rear delt fly':60,
+  'incline bench press':150,'seated cable row':120,'dip machine':120,'lat pulldown':120,'rear delt fly':60,
   'close-grip bench press':120,'ez-bar curl':75,
   'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'reverse curl':60,'neck curl':60,'cable hip abduction':60,'leg extension':75,'weighted back extension':90,
   'standing calf raise':60,'ab wheel rollout':75,'cable woodchopper':60
@@ -1183,7 +1183,7 @@ const MUSCLE_MAP = {
   'flat bench press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
   'cable fly': { chest: 1 },
   'incline bench press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
-  'chest dips': { chest: 1, triceps: 0.5 },
+  'dip machine': { chest: 1, triceps: 0.5 },
   'close-grip bench press': { triceps: 1, chest: 0.5 },
   'overhead press': { shoulders: 1, triceps: 0.5 },
   'lateral raise': { shoulders: 1 },
