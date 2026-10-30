@@ -385,13 +385,13 @@ const DAY_PLAN = [
     ['Reverse Curl', '2×12-15'], ['Neck Curl', '2×15'] ] },
   { label: 'Day 3 — Legs (Glutes)', ex: [
     ['Barbell Hip Thrust', '4×8-10'], ['Back Squat', '4×6-8'], ['Romanian Deadlift', '3×8-10'],
-    ['Leg Curl', '3×12-15'], ['Calf Raise', '3×12-15'], ['Hanging Leg Raise', '3×12-15'], ['Cable Crunch', '3×15-20'] ] },
+    ['Leg Curl', '3×12-15'], ['Hip Adduction Machine', '3×12-15'], ['Calf Raise', '3×12-15'], ['Hanging Leg Raise', '3×12-15'], ['Cable Crunch', '3×15-20'] ] },
   { label: 'Day 4 — Upper', ex: [
     ['Incline Bench Press', '3×8-10'], ['Seated Cable Row', '3×8-10'], ['Dip Machine', '3×10-12'],
     ['Lat Pulldown', '3×10-12'], ['Lateral Raise', '3×12-15'], ['Rear Delt Fly', '3×15-20'], ['Close-Grip Bench Press', '3×8-10'], ['EZ-Bar Curl', '3×8-10'] ] },
   { label: 'Day 5 — Lower', ex: [
-    ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'], ['Leg Extension', '3×12-15'], ['Cable Hip Abduction', '3×15/leg'],
-    ['Weighted Back Extension', '3×12-15'], ['Standing Calf Raise', '4×15-20'],
+    ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'], ['Leg Extension', '3×12-15/leg'], ['Hip Abduction Machine', '3×15'],
+     ['Standing Calf Raise', '4×15-20'],
     ['Ab Wheel Rollout', '3×12-15'], ['Cable Woodchopper', '3×12-15/side'] ] }
 ];
 const DAY_TEMPLATES = DAY_PLAN.map(d => ({ label: d.label, exercises: d.ex.map(e => e[0]) }));
@@ -1028,7 +1028,7 @@ const REST_BY_NAME = {
   'hanging leg raise':75,'cable crunch':60,
   'incline bench press':150,'seated cable row':120,'dip machine':120,'lat pulldown':120,'rear delt fly':60,
   'close-grip bench press':120,'ez-bar curl':75,
-  'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'reverse curl':60,'neck curl':60,'cable hip abduction':60,'leg extension':75,'weighted back extension':90,
+  'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'hip adduction machine':60,'reverse curl':60,'neck curl':60,'hip abduction machine':60,'leg extension':75,'weighted back extension':90,
   'standing calf raise':60,'ab wheel rollout':75,'cable woodchopper':60
 };
 function restSecondsFor(name) { return REST_BY_NAME[name.toLowerCase()] || 90; }
@@ -1176,7 +1176,7 @@ function importBackup(event) {
 const MUSCLES = [
   ['chest', 'Chest', true], ['back', 'Back', false], ['shoulders', 'Shoulders', false],
   ['biceps', 'Biceps', false], ['forearms', 'Forearms', false], ['triceps', 'Triceps', false], ['quads', 'Quads', false],
-  ['hamstrings', 'Hamstrings', false], ['glutes', 'Glutes', true], ['calves', 'Calves', false], ['abs', 'Abs', true]
+  ['hamstrings', 'Hamstrings', false], ['adductors', 'Adductors', false], ['glutes', 'Glutes', true], ['calves', 'Calves', false], ['abs', 'Abs', true]
 ];
 const MUSCLE_MAP = {
   'incline db press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
@@ -1199,12 +1199,13 @@ const MUSCLE_MAP = {
   'incline db curl': { biceps: 1 },
   'hammer curl': { biceps: 1, forearms: 0.5 },
   'reverse curl': { forearms: 1, biceps: 0.5 },
-  'cable hip abduction': { glutes: 1 },
+  'hip abduction machine': { glutes: 1 },
   'ez-bar curl': { biceps: 1 },
   'barbell hip thrust': { glutes: 1 },
   'back squat': { quads: 1, glutes: 0.5 },
   'romanian deadlift': { hamstrings: 1, glutes: 0.5 },
   'leg curl': { hamstrings: 1 },
+  'hip adduction machine': { adductors: 1 },
   'calf raise': { calves: 1 },
   'standing calf raise': { calves: 1 },
   'bulgarian split squat': { quads: 1, glutes: 0.5 },
