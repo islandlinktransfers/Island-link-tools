@@ -392,7 +392,7 @@ const DAY_PLAN = [
   { label: 'Day 5 — Lower', ex: [
     ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'], ['Leg Extension', '3×12-15/leg'], ['Hip Abduction Machine', '3×15'],
      ['Standing Calf Raise', '4×15-20'],
-    ['Ab Wheel Rollout', '3×12-15'], ['Cable Woodchopper', '3×12-15/side'] ] }
+    ['Ab Crunch Machine', '3×12-15'], ['Dumbbell Side Bend', '3×12-15/side'] ] }
 ];
 const DAY_TEMPLATES = DAY_PLAN.map(d => ({ label: d.label, exercises: d.ex.map(e => e[0]) }));
 const TARGET_BY_NAME = {};
@@ -430,7 +430,7 @@ if (draft.date !== todayStr()) {
 document.getElementById('todayLabel').textContent = todayStr();
 
 // Bodyweight exercises: reps only is enough (kg stays 0 unless you add weight).
-const BW_NAMES = ['hanging leg raise', 'ab wheel rollout', 'wide-grip pull-ups'];
+const BW_NAMES = ['hanging leg raise', 'wide-grip pull-ups'];
 function isBW(name) { return BW_NAMES.includes(String(name).toLowerCase()); }
 function fmtSet(name, s) {
   const kg = parseFloat(s.kg) || 0;
@@ -1029,7 +1029,7 @@ const REST_BY_NAME = {
   'incline bench press':150,'seated cable row':120,'dip machine':120,'lat pulldown':120,'rear delt fly':60,
   'close-grip bench press':120,'ez-bar curl':75,
   'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'hip adduction machine':60,'reverse curl':60,'neck curl':60,'hip abduction machine':60,'leg extension':75,'weighted back extension':90,
-  'standing calf raise':60,'ab wheel rollout':75,'cable woodchopper':60
+  'standing calf raise':60,'ab crunch machine':60,'dumbbell side bend':60
 };
 function restSecondsFor(name) { return REST_BY_NAME[name.toLowerCase()] || 90; }
 
@@ -1215,8 +1215,8 @@ const MUSCLE_MAP = {
   'weighted back extension': { glutes: 0.5, hamstrings: 0.5 },
   'hanging leg raise': { abs: 1 },
   'cable crunch': { abs: 1 },
-  'ab wheel rollout': { abs: 1 },
-  'cable woodchopper': { abs: 1 }
+  'ab crunch machine': { abs: 1 },
+  'dumbbell side bend': { abs: 1 }
 };
 
 function plannedVolume() {
