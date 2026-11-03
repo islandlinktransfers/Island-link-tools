@@ -262,6 +262,14 @@ body.rest-on { padding-bottom: 150px; }
   background: var(--panel2); border: 1px solid var(--steel); border-radius: 4px; color: var(--steel-light);
   font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.85rem; padding: 7px 10px; cursor: pointer;
 }
+.vol-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.vol-headtext { text-align: center; flex: 1; }
+.vol-range { font-family: 'Space Mono', monospace; font-size: 0.72rem; color: var(--text-dim); }
+.vol-nav {
+  width: 38px; height: 38px; background: var(--panel2); border: 1px solid var(--line); border-radius: 4px;
+  color: var(--text); font-size: 1.3rem; line-height: 1; cursor: pointer;
+}
+.vol-nav:disabled { opacity: 0.3; cursor: default; }
 </style>
 </head>
 <body>
@@ -1229,9 +1237,14 @@ function plannedVolume() {
   return p;
 }
 
-function weeklyVolume() {
+function weekStart(offset) {
   const now = new Date();
-  const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7));
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7) - 7 * offset);
+}
+
+function weeklyVolume(offset) {
+  offset = offset || 0;
+  const monday = weekStart(offset);
   const next = new Date(monday); next.setDate(monday.getDate() + 7);
   const done = {};
   const addEx = (ex) => {
@@ -1244,14 +1257,24 @@ function weeklyVolume() {
     const dt = parseSessionDate(s.date);
     if (dt >= monday && dt < next) s.exercises.forEach(addEx);
   });
-  draft.exercises.forEach(addEx); // today's workout in progress
+  if (offset === 0) draft.exercises.forEach(addEx); // today's workout in progress
   return done;
 }
 
 function fmtSets(n) { return Number.isInteger(n) ? String(n) : n.toFixed(1); }
 
+let volWeekOffset = 0;
+function shiftVolWeek(delta) {
+  volWeekOffset = Math.max(0, Math.min(52, volWeekOffset + delta));
+  renderWeeklyVolume();
+}
+
 function renderWeeklyVolume() {
-  const planned = plannedVolume(), done = weeklyVolume();
+  const planned = plannedVolume(), done = weeklyVolume(volWeekOffset);
+  const mon = weekStart(volWeekOffset), sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+  const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const range = `${mon.getDate()} ${mn[mon.getMonth()]} – ${sun.getDate()} ${mn[sun.getMonth()]}`;
+  const title = volWeekOffset === 0 ? 'This week' : (volWeekOffset === 1 ? 'Last week' : `${volWeekOffset} weeks ago`);
   const rows = MUSCLES.map(([key, label, prio]) => {
     const p = planned[key] || 0, d = done[key] || 0;
     const scale = Math.max(p, d, 1);
@@ -1265,7 +1288,11 @@ function renderWeeklyVolume() {
   }).join('');
   document.getElementById('volumeWrap').innerHTML = `
     <div class="heatmap-card">
-      <div class="vol-title">This week · sets</div>
+      <div class="vol-head">
+        <button class="vol-nav" onclick="shiftVolWeek(1)" aria-label="Previous week">‹</button>
+        <div class="vol-headtext"><div class="vol-title">${title} · sets</div><div class="vol-range">${range}</div></div>
+        <button class="vol-nav" onclick="shiftVolWeek(-1)" aria-label="Next week" ${volWeekOffset === 0 ? 'disabled' : ''}>›</button>
+      </div>
       <div class="vol-sub">Done vs. your plan. Secondary muscles count ½. ★ = priority.</div>
       ${rows}
     </div>`;
