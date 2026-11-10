@@ -305,6 +305,7 @@ body.rest-on { padding-bottom: 150px; }
   <div class="backup-card">
     <div class="b-title">Backup</div>
     <div class="backup-note" id="backupNote"></div>
+    <div class="backup-note" id="archiveNote" style="display:none"></div>
     <div class="backup-row">
       <button onclick="exportBackup()">⬇ Export</button>
       <button onclick="document.getElementById('importFile').click()">⬆ Import</button>
@@ -382,25 +383,61 @@ body.rest-on { padding-bottom: 150px; }
 </div>
 
 <script>
+// Fresh start for the coach's program (v2): archive old data once, then clear the active keys.
+(function () {
+  try {
+    const MARK = 'workoutLog_resetV2';
+    if (localStorage.getItem(MARK)) return;
+    const arc = {};
+    Object.keys(localStorage).filter(k => k.startsWith('workoutLog_')).forEach(k => { arc[k] = localStorage.getItem(k); });
+    if (Object.keys(arc).length) localStorage.setItem('archive_workoutLog_v1', JSON.stringify(arc));
+    Object.keys(arc).forEach(k => localStorage.removeItem(k));
+    localStorage.setItem(MARK, '1');
+  } catch (e) {}
+})();
 const DAY_PLAN = [
-  { label: 'Day 1 — Push (Chest)', ex: [
-    ['Incline DB Press', '4×8-10'], ['Flat Bench Press', '4×6-8'], ['Cable Fly', '3×12-15'],
-    ['Overhead Press', '3×8-10'], ['Lateral Raise', '3×12-15'],
-    ['Overhead Triceps Extension', '3×10-12'], ['Triceps Pushdown', '3×12-15'] ] },
+  { label: 'Day 1 — Push', ex: [
+    ['Lateral Raise Machine', '3×8-12 · RIR0 · WU 1-2'],
+    ['Incline Dumbbell Press (15-30°)', '2×6-10 · RIR0 · WU 2-3 · paused lengthened'],
+    ['Shoulder Press Machine', '2×8-12 · RIR0 · WU 1-2 · close grip'],
+    ['Incline Chest Press Machine', '2×8-12 · RIR0 · WU 1'],
+    ['Cable Fly', '3×10-15 · RIR0'],
+    ['Single Arm Cuff Lateral Raise (Cable)', '3×10-15 · RIR0'],
+    ['Triceps Pushdown Cable', '3×8-12 · WU 1'],
+    ['Overhead Triceps Extension Cable', '3×10-15 · RIR0 · WU 0-1 · rope'] ] },
   { label: 'Day 2 — Pull', ex: [
-    ['Wide-Grip Pull-ups', '4×6-10'], ['Barbell Row', '3×8-10'], ['Face Pull', '3×15'],
-    ['Barbell Shrugs', '4×10-12'], ['Incline DB Curl', '4×10-12'], ['Hammer Curl', '3×12-15'],
-    ['Reverse Curl', '2×12-15'] ] },
-  { label: 'Day 3 — Legs (Glutes)', ex: [
-    ['Barbell Hip Thrust', '4×8-10'], ['Back Squat', '4×6-8'], ['Romanian Deadlift', '3×8-10'],
-    ['Leg Curl', '3×12-15'], ['Hip Adduction Machine', '3×12-15'], ['Calf Raise', '3×12-15'], ['Hanging Leg Raise', '3×12-15'], ['Ab Crunch Machine', '3×12-15'] ] },
-  { label: 'Day 4 — Upper', ex: [
-    ['Incline Bench Press', '3×8-10'], ['Seated Cable Row', '3×8-10'], ['Dip Machine', '3×10-12'],
-    ['Lat Pulldown', '3×10-12'], ['Lateral Raise', '3×12-15'], ['Rear Delt Fly', '3×15-20'], ['Close-Grip Bench Press', '3×8-10'], ['EZ-Bar Curl', '3×8-10'] ] },
-  { label: 'Day 5 — Lower', ex: [
-    ['Bulgarian Split Squat', '3×10-12/leg'], ['Cable Pull-Through', '3×10-12'], ['Leg Press', '3×10-12'], ['Leg Extension', '3×12-15/leg'], ['Hip Abduction Machine', '3×15'],
-     ['Standing Calf Raise', '4×15-20'],
-    ['Ab Crunch Machine', '3×12-15'], ['Dumbbell Side Bend', '3×12-15/side'] ] }
+    ['Cable Pullover', '3×10-15 · RIR0 · WU 2-3'],
+    ['T-Bar Row', '2×6-10 · RIR0 · WU 2-3'],
+    ['Chest Supported Row Close Grip', '2×6-12 · RIR0 · WU 1-2 · 1×6-10, 1×10-12'],
+    ['Teres Major Pulldown Machine', '3×8-15 · RIR0 · WU 1-2 · wide grip · 2×8-10, 1×10-15'],
+    ['Rear Delt Fly Machine', '3×10-15 · RIR0 · WU 1-2'],
+    ['Preacher Curl Machine', '3×8-12 · RIR0 · WU 0-1'],
+    ['Hammer Curls', '2×10-20 · RIR0 · WU 0-1'] ] },
+  { label: 'Day 3 — Legs', ex: [
+    ['Hip Thrust (Machine / Smith)', '2×6-12 · RIR0 · WU 2'],
+    ['Seated Leg Curl', '2×10-15 · RIR0 · WU 1'],
+    ['Leg Extension', '3×8-12 · RIR0 · WU 2 · 1st set paused shortened'],
+    ['Hack Squat', '2×6-12 · RIR0 · WU 2-4'],
+    ['Leg Press', '2×8-12 · RIR0 · WU 2 · w/ knee flexion'],
+    ['Adductor Machine', '3×8-12 · RIR0 · WU 2'],
+    ['Calf Raise Machine', '2×10-20 · RIR0 · WU 1'] ] },
+  { label: 'Day 4 — Push (Arms)', ex: [
+    ['Lying Y Raise', '3×10-15 · RIR0 · WU 1-2'],
+    ['Smith Press 45°', '2×8-12 · RIR0 · WU 2-3'],
+    ['Flat Chest Press Machine', '2×8-12 · RIR0 · WU 1-2'],
+    ['Dips', '2×10-15 · RIR0 · WU 0-1'],
+    ['Cable Curl', '3×8-12 · RIR0 · WU 1'],
+    ['JM Press', '2×10-15 · RIR0 · WU 1'],
+    ['Bayesian Curl', '3×10-15 · RIR0 · WU 0'],
+    ['Single Arm Overhead Tricep Extension', '3×8-12 · RIR0 · WU 0'] ] },
+  { label: 'Day 5 — Density', ex: [
+    ['Lying Leg Curl', '2×8-12 · RIR0 · WU 1-2'],
+    ['Romanian Deadlift (RDL)', '2×5-12 · RIR0 · WU 2-3 · 5-8, 10-12'],
+    ['Belt Squat', '2×8-12 · RIR0 · WU 1-2'],
+    ['Bulgarian Split Squat', '1×10-15 · RIR0 · WU 0-1'],
+    ['Lat Pulldown Close Grip', '3×8-12 · RIR0 · WU 2'],
+    ['Chest Supported Row Wide Grip', '3×8-12 · RIR0 · WU 1-2'],
+    ['Ab Crunch Machine', '2×10-20 · RIR0 · WU 0-1'] ] }
 ];
 const DAY_TEMPLATES = DAY_PLAN.map(d => ({ label: d.label, exercises: d.ex.map(e => e[0]) }));
 const TARGET_BY_NAME = {};
@@ -438,7 +475,7 @@ if (draft.date !== todayStr()) {
 document.getElementById('todayLabel').textContent = todayStr();
 
 // Bodyweight exercises: reps only is enough (kg stays 0 unless you add weight).
-const BW_NAMES = ['hanging leg raise', 'wide-grip pull-ups'];
+const BW_NAMES = ['dips'];
 function isBW(name) { return BW_NAMES.includes(String(name).toLowerCase()); }
 function fmtSet(name, s) {
   const kg = parseFloat(s.kg) || 0;
@@ -1029,15 +1066,43 @@ function toggleRestAuto() {
 
 // Heavier / lower-rep work gets longer rest, same idea as the plan: compounds 2-3 min, isolation ~1 min.
 const REST_BY_NAME = {
-  'incline db press':150,'flat bench press':180,'cable fly':75,'overhead press':150,'lateral raise':60,
-  'overhead triceps extension':75,'triceps pushdown':60,
-  'wide-grip pull-ups':150,'barbell row':150,'face pull':60,'barbell shrugs':90,'incline db curl':75,'hammer curl':60,
-  'barbell hip thrust':150,'back squat':180,'romanian deadlift':150,'leg curl':75,'calf raise':60,
-  'hanging leg raise':75,'cable crunch':60,
-  'incline bench press':150,'seated cable row':120,'dip machine':120,'lat pulldown':120,'rear delt fly':60,
-  'close-grip bench press':120,'ez-bar curl':75,
-  'bulgarian split squat':120,'cable pull-through':90,'leg press':120,'hip adduction machine':60,'reverse curl':60,'neck curl':60,'hip abduction machine':60,'leg extension':75,'weighted back extension':90,
-  'standing calf raise':60,'ab crunch machine':60,'dumbbell side bend':60
+  'lateral raise machine':60,
+  'incline dumbbell press (15-30°)':120,
+  'shoulder press machine':120,
+  'incline chest press machine':120,
+  'cable fly':75,
+  'single arm cuff lateral raise (cable)':60,
+  'triceps pushdown cable':60,
+  'overhead triceps extension cable':75,
+  'cable pullover':90,
+  't-bar row':120,
+  'chest supported row close grip':120,
+  'teres major pulldown machine':90,
+  'rear delt fly machine':60,
+  'preacher curl machine':75,
+  'hammer curls':60,
+  'hip thrust (machine / smith)':120,
+  'seated leg curl':75,
+  'leg extension':75,
+  'hack squat':150,
+  'leg press':120,
+  'adductor machine':60,
+  'calf raise machine':60,
+  'lying y raise':60,
+  'smith press 45°':120,
+  'flat chest press machine':120,
+  'dips':90,
+  'cable curl':60,
+  'jm press':90,
+  'bayesian curl':60,
+  'single arm overhead tricep extension':60,
+  'lying leg curl':75,
+  'romanian deadlift (rdl)':150,
+  'belt squat':120,
+  'bulgarian split squat':120,
+  'lat pulldown close grip':90,
+  'chest supported row wide grip':90,
+  'ab crunch machine':60
 };
 function restSecondsFor(name) { return REST_BY_NAME[name.toLowerCase()] || 90; }
 
@@ -1180,6 +1245,29 @@ function importBackup(event) {
   reader.readAsText(file);
 }
 
+
+/* ---------- Old data archive (from the v2 fresh start) ---------- */
+function renderArchiveNote() {
+  const el = document.getElementById('archiveNote');
+  if (!el) return;
+  let has = false;
+  try { has = !!localStorage.getItem('archive_workoutLog_v1'); } catch (e) {}
+  if (!has) { el.style.display = 'none'; return; }
+  el.style.display = '';
+  el.innerHTML = 'Old data from before the coach plan is archived on this phone. <button onclick="restoreArchive()" style="background:none;border:1px solid var(--steel-light);color:var(--steel-light);border-radius:6px;padding:3px 8px;margin-left:6px;font-size:.75rem">Restore old data</button>';
+}
+function restoreArchive() {
+  if (!confirm('Restore the old data? This replaces everything currently in the app (the new coach-plan logs).')) return;
+  try {
+    const arc = JSON.parse(localStorage.getItem('archive_workoutLog_v1') || '{}');
+    Object.keys(localStorage).filter(k => k.startsWith('workoutLog_')).forEach(k => localStorage.removeItem(k));
+    Object.keys(arc).forEach(k => localStorage.setItem(k, arc[k]));
+    localStorage.setItem('workoutLog_resetV2', '1');
+    location.reload();
+  } catch (e) { alert('Could not restore.'); }
+}
+renderArchiveNote();
+
 /* ---------- Weekly volume per muscle ---------- */
 const MUSCLES = [
   ['chest', 'Chest', true], ['back', 'Back', false], ['shoulders', 'Shoulders', false],
@@ -1187,44 +1275,43 @@ const MUSCLES = [
   ['hamstrings', 'Hamstrings', false], ['adductors', 'Adductors', false], ['glutes', 'Glutes', true], ['calves', 'Calves', false], ['abs', 'Abs', true]
 ];
 const MUSCLE_MAP = {
-  'incline db press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
-  'flat bench press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
+  'lateral raise machine': { shoulders: 1 },
+  'incline dumbbell press (15-30°)': { chest: 1, triceps: 0.5, shoulders: 0.5 },
+  'shoulder press machine': { shoulders: 1, triceps: 0.5 },
+  'incline chest press machine': { chest: 1, triceps: 0.5, shoulders: 0.5 },
   'cable fly': { chest: 1 },
-  'incline bench press': { chest: 1, triceps: 0.5, shoulders: 0.5 },
-  'dip machine': { chest: 1, triceps: 0.5 },
-  'close-grip bench press': { triceps: 1, chest: 0.5 },
-  'overhead press': { shoulders: 1, triceps: 0.5 },
-  'lateral raise': { shoulders: 1 },
-  'rear delt fly': { shoulders: 1 },
-  'face pull': { shoulders: 1 },
-  'overhead triceps extension': { triceps: 1 },
-  'triceps pushdown': { triceps: 1 },
-  'wide-grip pull-ups': { back: 1, biceps: 0.5 },
-  'barbell row': { back: 1, biceps: 0.5 },
-  'seated cable row': { back: 1, biceps: 0.5 },
-  'lat pulldown': { back: 1, biceps: 0.5 },
-  'barbell shrugs': { back: 1 },
-  'incline db curl': { biceps: 1 },
-  'hammer curl': { biceps: 1, forearms: 0.5 },
-  'reverse curl': { forearms: 1, biceps: 0.5 },
-  'hip abduction machine': { glutes: 1 },
-  'ez-bar curl': { biceps: 1 },
-  'barbell hip thrust': { glutes: 1 },
-  'back squat': { quads: 1, glutes: 0.5 },
-  'romanian deadlift': { hamstrings: 1, glutes: 0.5 },
-  'leg curl': { hamstrings: 1 },
-  'hip adduction machine': { adductors: 1 },
-  'calf raise': { calves: 1 },
-  'standing calf raise': { calves: 1 },
-  'bulgarian split squat': { quads: 1, glutes: 0.5 },
-  'cable pull-through': { glutes: 1, hamstrings: 0.5 },
-  'leg press': { quads: 1, glutes: 0.5 },
+  'single arm cuff lateral raise (cable)': { shoulders: 1 },
+  'triceps pushdown cable': { triceps: 1 },
+  'overhead triceps extension cable': { triceps: 1 },
+  'cable pullover': { back: 1 },
+  't-bar row': { back: 1, biceps: 0.5 },
+  'chest supported row close grip': { back: 1, biceps: 0.5 },
+  'teres major pulldown machine': { back: 1, biceps: 0.5 },
+  'rear delt fly machine': { shoulders: 1 },
+  'preacher curl machine': { biceps: 1 },
+  'hammer curls': { biceps: 1, forearms: 0.5 },
+  'hip thrust (machine / smith)': { glutes: 1 },
+  'seated leg curl': { hamstrings: 1 },
   'leg extension': { quads: 1 },
-  'weighted back extension': { glutes: 0.5, hamstrings: 0.5 },
-  'hanging leg raise': { abs: 1 },
-  'cable crunch': { abs: 1 },
-  'ab crunch machine': { abs: 1 },
-  'dumbbell side bend': { abs: 1 }
+  'hack squat': { quads: 1, glutes: 0.5 },
+  'leg press': { quads: 1, glutes: 0.5 },
+  'adductor machine': { adductors: 1 },
+  'calf raise machine': { calves: 1 },
+  'lying y raise': { shoulders: 1 },
+  'smith press 45°': { chest: 1, triceps: 0.5, shoulders: 0.5 },
+  'flat chest press machine': { chest: 1, triceps: 0.5, shoulders: 0.5 },
+  'dips': { chest: 1, triceps: 0.5 },
+  'cable curl': { biceps: 1 },
+  'jm press': { triceps: 1, chest: 0.5 },
+  'bayesian curl': { biceps: 1 },
+  'single arm overhead tricep extension': { triceps: 1 },
+  'lying leg curl': { hamstrings: 1 },
+  'romanian deadlift (rdl)': { hamstrings: 1, glutes: 0.5 },
+  'belt squat': { quads: 1, glutes: 0.5 },
+  'bulgarian split squat': { quads: 1, glutes: 0.5 },
+  'lat pulldown close grip': { back: 1, biceps: 0.5 },
+  'chest supported row wide grip': { back: 1, biceps: 0.5 },
+  'ab crunch machine': { abs: 1 }
 };
 
 function plannedVolume() {
