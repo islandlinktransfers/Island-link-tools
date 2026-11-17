@@ -277,6 +277,7 @@ body.rest-on { padding-bottom: 150px; }
 <header>
   <h1>Workout Log</h1>
   <span class="date" id="todayLabel"></span>
+  <input type="date" id="workoutDate" title="Ημερομηνία προπόνησης" style="background:transparent;border:1px solid var(--text-dim);color:var(--text-dim);border-radius:6px;font-family:'Space Mono',monospace;font-size:0.7rem;padding:2px 4px;margin-left:6px;">
 </header>
 
 <div class="tabs">
@@ -467,12 +468,27 @@ function saveDraft(draft) {
 
 let draft = loadDraft();
 // If the draft is from a previous day, start a fresh one (yesterday's unfinished workout stays lost by design - simple single-device tool)
-if (draft.date !== todayStr()) {
+if (draft.date !== todayStr() && !draft.editing) {
   draft = { date: todayStr(), exercises: [] };
   saveDraft(draft);
 }
 
-document.getElementById('todayLabel').textContent = todayStr();
+function isoFromStr(str) { const [d, m, y] = String(str).split('/'); return `${y}-${m}-${d}`; }
+function syncDateUI() {
+  document.getElementById('todayLabel').textContent = draft.date;
+  const inp = document.getElementById('workoutDate');
+  inp.value = isoFromStr(draft.date);
+  const t = new Date(); inp.max = isoFromStr(todayStr());
+}
+document.getElementById('workoutDate').addEventListener('change', function () {
+  if (!this.value) return;
+  const [y, m, d] = this.value.split('-');
+  draft.date = `${d}/${m}/${y}`;
+  if (draft.date !== todayStr()) draft.editing = true; else delete draft.editing;
+  saveDraft(draft);
+  syncDateUI();
+});
+syncDateUI();
 
 // Bodyweight exercises: reps only is enough (kg stays 0 unless you add weight).
 const BW_NAMES = ['dips'];
@@ -633,6 +649,7 @@ function finishWorkout() {
 
   localStorage.removeItem(DRAFT_KEY);
   draft = { date: todayStr(), exercises: [] };
+  syncDateUI();
   renderLog();
   renderHistory();
   switchTab('history');
@@ -682,15 +699,17 @@ function editSession(originalIndex) {
   sessions.splice(originalIndex, 1);
   saveSessions(sessions);
 
-  // ...and load it into today's editable draft, re-dating it to today so it behaves like a normal in-progress workout.
+  // ...and load it into the editable draft, KEEPING its original date (change it with the date box if needed).
   draft = {
-    date: todayStr(),
+    date: session.date,
+    editing: true,
     exercises: session.exercises.map(ex => ({
       name: ex.name,
       sets: ex.sets.map(s => ({ kg: s.kg, reps: s.reps }))
     }))
   };
   saveDraft(draft);
+  syncDateUI();
 
   renderLog();
   renderHistory();
